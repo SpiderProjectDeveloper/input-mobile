@@ -1,7 +1,11 @@
 ﻿import React, { Component } from 'react';
 import { AntDesign } from '@expo/vector-icons'; 
+import { Dimensions } from 'react-native';
 
 export const settings = {
+		window: Dimensions.get('window'),
+		editTableInitialLoad: 24,
+
 		fakeConnection: false,
 
 		lang: 'ru',
@@ -30,6 +34,9 @@ export const settings = {
 
 		loadingIcon: <AntDesign name="loading1" size={28} color="black" />,
 		fileIcon: <AntDesign name="file1" size={18} color="#004444" />,
+
+    nextPageDownButton: <AntDesign name="caretdown" size={20} color="lightgray"/>,
+		nextPageUpButton: <AntDesign name="caretup" size={20} color="lightgray"/>,
 
 		defaultCellWidth: 140,
 		tableCellFontSize:14,

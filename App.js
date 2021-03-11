@@ -1,9 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component } from 'react';
-import { Text, TextInput, View, ScrollView } from 'react-native';
+import { Text, TextInput, View, ScrollView, Touchable, TouchableOpacity, Pressable } from 'react-native';
 import { EditTable } from './EditTable.js';
-import { EditField } from './EditField.js';
-import { logHelper, getStatusTextHelper, makeUrlHelper, formatSpiderDateHelper } from './helpers.js';
+import { ProjectList } from './ProjectList.js';
+import { ProjectDetails } from './ProjectDetails.js';
+import { UpperButton } from './UpperButton.js';
+import { logHelper, getStatusTextHelper as getUpperPrompHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper } from './helpers.js';
 import {styles} from './styles.js';
 import {settings} from './settings.js';
 
@@ -16,20 +18,22 @@ export default class  App extends Component  {
         server: '192.168.1.28', port: '8080', user: 'user', password: 'user'
       },
       projectList: null,
+			projectChosen: null,
       status: settings.statusLoginRequired
     };
-
 		this._sessId = null;
     this._rawData = null; 
 		this._docHandle = null;
 		this._perfStart = formatSpiderDateHelper( new Date(new Date() - 1000*60*60*24*7) );
 		this._perfEnd = formatSpiderDateHelper(new Date());
+		this._grouppedProjectList = null;
 
     this.onLogin = this.onLogin.bind(this);
     this.onLogout = this.onLogout.bind(this);
     this.onOpenProject = this.onOpenProject.bind(this);
     this.loadProjects = this.loadProjects.bind(this);
     this.onSaveProject = this.onSaveProject.bind(this);
+		this.onProjectChosen = this.onProjectChosen.bind(this);
     this.onExitWithoutSave = this.onExitWithoutSave.bind(this);
     this.onCancelExitingWithoutSave = this.onCancelExitingWithoutSave.bind(this);
     this.onBackToProjects = this.onBackToProjects.bind(this);
@@ -57,6 +61,10 @@ export default class  App extends Component  {
 			this._rawData.array[row][code] = value;
 		}
 		this.setState({ status:settings.statusDataChanged });
+	}
+
+	onProjectChosen(prj) {
+		this.setState( {projectChosen: prj} );
 	}
 
   setData(data) {
@@ -132,13 +140,14 @@ export default class  App extends Component  {
 		});
   }
 
-  onOpenProject( index ) {
+  onOpenProject( projectName, projectVersion ) {
 		if( this.state.status === settings.statusDataBeingLoaded )
 			return;
-    this.setState( { status: settings.statusDataBeingLoaded }, function() {
+		let fileName = projectName + "." + projectVersion + ".sprj";
+		this.setState( { status: settings.statusDataBeingLoaded }, function() {
 			fetch( makeUrlHelper(this.state.credentials), {
 					method:'POST',
-					body: JSON.stringify({ command:'openFile', sessId:this._sessId, fileName: this.state.projectList[index]})
+					body: JSON.stringify({ command:'openFile', sessId:this._sessId, fileName: fileName})
 			}).
 			then( response => response.json()).
 			then( d => {
@@ -195,6 +204,7 @@ export default class  App extends Component  {
 				if( !('errcode' in d) || d.errcode != 0 ) {
 					this.setState({ status: settings.statusProjectListRequestFailed });
 				} else {
+					this._grouppedProjectList = groupProjectListHelper(d.array);
 					this.setState({ status: settings.statusProjectListLoaded, projectList:d.array });
 				}
 			}).
@@ -294,25 +304,28 @@ export default class  App extends Component  {
   }
 
   render() {
-    let status = getStatusTextHelper( this.state.status );
     let loginViewStatuses = [ settings.statusLoginRequired, settings.statusLoginFailed, 
       settings.statusLoginRequestFailed, settings.statusLoggingIn ];
     let listViewStatuses = [ settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
       settings.statusProjectListLoaded, settings.statusDataBeingLoaded, settings.statusDataLoadFailed ];
-    let view;
+
+		let upperPrompt = getUpperPrompHelper( this.state.status, 
+			{ projectChosen: this.state.projectChosen, 
+				statuses: [settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
+				settings.statusProjectListLoaded] } );
+
+			let view;
     if( loginViewStatuses.includes( this.state.status ) ) {
       // LOGIN VIEW
       view = (
         <View style={styles.screenContainer}>
           <View style={styles.upperContainer}>
             <View style={styles.upperPromptContainer}>          
-              <Text style={styles.upperPrompt}>{status}</Text>
+              {upperPrompt}
             </View>
 						{ 
-						(this.state.status !== settings.statusLoggingIn ) ?
-							(<View style={styles.upperButtonContainer}>          
-								<Text title={'Logout'} style={styles.upperButton} onPress={this.onLogin}>{settings.loginButton}</Text>
-							</View>) : null 
+						(this.state.status !== settings.statusLoggingIn ) ? 
+							(<UpperButton onPress={this.onLogin} text={settings.loginButton} />) : null //(<Pressable onPress={this.onLogin} style={styles.upperButtonContainer}><Text title={'Login'} style={styles.upperButton}>{settings.loginButton}</Text></Pressable>) : null 
 						}
           </View>
           <View style={styles.mainContainer}>
@@ -337,46 +350,26 @@ export default class  App extends Component  {
       let upperView = (
         <View style={styles.upperContainer}>
           <View style={styles.upperPromptContainer}>          
-            <Text style={styles.upperPrompt}>{status}</Text>
+            {upperPrompt}
           </View>
 					{
 					(this.state.status !== settings.statusDataBeingLoaded && this.state.status !== settings.statusDataBeingUnloaded) ?
-          	(<View style={styles.upperButtonContainer}>          
-            	<Text title={'Logout'} style={styles.upperButton} onPress={this.onLogout}>{settings.logoutButton}</Text>
-          	</View>) : null
+						<UpperButton onPress={this.onLogout} text={settings.logoutButton} /> : null // (<View style={styles.upperButtonContainer}><Text title={'Logout'} style={styles.upperButton} onPress={this.onLogout}>{settings.logoutButton}</Text></View>) : null
 					}
         </View>
       );
-			let main;
-      if( [settings.statusProjectListLoaded, settings.statusDataLoadFailed ].includes(this.state.status) ) { 
-        let projects = [];
-        for( let i = 0 ; i < this.state.projectList.length ; i++ ) {
-          projects.push(
-            <View key={'__myProjectListItemView'+String(i)}  style={styles.mainContainerScrollItem}>
-              <View style={styles.projectListItemContainer}>
-								{settings.fileIcon}
-								<Text key={'__myProjectListItemText'+String(i)} 
-								style={styles.projectListItem}
-                onPress={() => this.onOpenProject(i)}>{this.state.projectList[i]}</Text>
-							</View>	
-            </View>);
-        }
-				main = (
-					<View style={styles.mainContainer}>
-						<ScrollView style={styles.mainContainerScroll}>{projects}</ScrollView>
-          </View>
-				)
-      } else {
-        main = (<View style={ styles.mainContainer}>{settings.loadingIcon}</View>)
-      }
-			let dateStatuses = [settings.statusDataBeingLoaded, settings.statusProjectListBeingLoaded, settings.statusDataBeingUnloaded]
-      let dates = ( !(dateStatuses.includes(this.state.status)) ) ?
-        (<View style={styles.performanceDatesContainer}>
-          <EditField style={styles.performanceDateInput} viewStyle={styles.performanceDate} type={'datetime'}
-						value={this._perfStart} setter={this.perfStartSetter} placeholder={'Start Date'} />							
-					<EditField style={styles.performanceDateInput} viewStyle={styles.performanceDate} type={'datetime'}
-						value={this._perfEnd} setter={this.perfEndSetter} placeholder={'End Date'} />
-        </View>) : null;
+			let disabled = (this.state.status === settings.statusDataBeingLoaded);
+			let main = (
+				<View style={styles.mainContainer}>
+					<ProjectList list={this._grouppedProjectList} 
+						onPress={this.onProjectChosen} chosen={this.state.projectChosen} disabled={disabled} /> 
+				</View>);
+			let dateStatuses = [settings.statusProjectListBeingLoaded];
+      let dates = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
+        (<ProjectDetails project={this.state.projectChosen} 
+					disabled={disabled}
+					versions={this._grouppedProjectList[this.state.projectChosen]}  
+					onPress={this.onOpenProject} />) : null;
       view = (
         <View style={styles.screenContainer}>
           {upperView}
@@ -400,41 +393,27 @@ export default class  App extends Component  {
       if( this.state.status === settings.statusExitingWithoutSave ) {
         upperView = (
           <View style={styles.upperContainer}>
-            <View style={ [ styles.upperButtonContainer, {backgroundColor: settings.warningColor} ] }>
-              <Text title={settings.yesButton} style={ styles.upperButton } 
-                onPress={this.onExitWithoutSave}>{settings.yesButton}</Text>
-            </View>
-            <View style={styles.upperPromptContainer}>          
-	            <Text style={styles.upperPrompt}>{status}</Text>
-            </View>
-            <View style={styles.upperButtonContainer}>          
-	            <Text title={settings.noButton} style={styles.upperButton} 
-  	            onPress={this.onCancelExitingWithoutSave}>{settings.noButton}</Text>
-            </View>
+						<UpperButton onPress={this.onExitWithoutSave} text={settings.yesButton} style={{backgroundColor:settings.warningColor}}/>
+            <View style={styles.upperPromptContainer}>{upperPrompt}</View>
+						<UpperButton onPress={this.onCancelExitingWithoutSave} text={settings.noButton}/>
           </View>
         );
       } else {
-        let saveButtonBgColor = 
+        let bgColor = 
           ([settings.statusDataChanged, settings.statusDataSaveFailed].includes(this.state.status)) ?
             settings.activeButtonBgColor : settings.inactiveButtonBgColor;
         upperView = (
           <View style={styles.upperContainer}>
 						{ 
 							(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
-            		(<View style={[ styles.upperButtonContainer, {backgroundColor:saveButtonBgColor} ]}>
-              		<Text title={settings.saveButton} style={styles.upperButton} onPress={this.onSaveProject}>
-                		{settings.saveButton}</Text>
-            		</View>) : null
+            		(<UpperButton onPress={this.onSaveProject} text={settings.saveButton} style={{backgroundColor:bgColor}}/>) : null
 						}
             <View style={styles.upperPromptContainer}>          
-              <Text style={styles.upperPrompt}>{status}</Text>
+              {upperPrompt}
             </View>
 						{
 							(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
-								(<View style={styles.upperButtonContainer}>          
-									<Text title={settings.projectsButton} style={styles.upperButton} 
-										onPress={this.onBackToProjects}>{settings.backToProjectsButton}</Text>
-								</View>) : null
+								(<UpperButton onPress={this.onBackToProjects} text={settings.backToProjectsButton}/>) : null
 						}
          </View>
         );
@@ -447,7 +426,10 @@ export default class  App extends Component  {
       );  
     }
     return(
-      <>{ view }<StatusBar hidden={true}/></>      
+      <>
+				{view}
+				<StatusBar hidden={true}/>
+			</>      
     );
   }
 }

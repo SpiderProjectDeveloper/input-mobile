@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
       flex:1, width:'100%', backgroundColor: settings.screenBgColor
     },
     mainContainerScrollItem: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', margin: 2, padding: 4 
+        flexDirection: 'row', width:'100%', justifyContent: 'space-between', alignItems: 'center', margin: 2, padding: 4 
     },
     loginPageSubHeader: {
       color: '#7f7f7f', 
@@ -44,21 +44,26 @@ export const styles = StyleSheet.create({
     },
     projectListItemContainer: {
 			width:'100%', 
-      flexDirection:'row', paddingLeft:24, paddingTop:6, paddingBottom:8, 
+      flexDirection:'row', paddingLeft:24, paddingTop:4, paddingBottom:8, 
 			borderStyle:'dotted', borderBottomWidth:1, borderBottomColor:settings.dimColor,			
     },
 		projectListItem: { 
       paddingLeft:4, paddingTop:0, color: settings.linkColor 
     },
-    performanceDatesContainer: {
-      flex:1, flexDirection:'row', backgroundColor:settings.screenBgColor2, padding:0, 
+		projectListChosenItem: { 
+      paddingLeft:4, paddingTop:0, color: settings.linkColor, fontWeight:'bold' 
+    },
+    projectDetailsContainer: {
+      flexDirection:'column', backgroundColor:settings.screenBgColor2, marginBottom:8, padding:4
+    },
+		performanceDatesContainer: {
+      flexDirection:'row', padding:0, backgroundColor:settings.screenBgColor2
     },
     performanceDate: {
-      flex:5, paddingTop:6, paddingBottom:6, paddingLeft:4, paddingRight:4, backgroundColor:'white', 
-			borderBottomWidth:1, borderRightWidth:1, borderStyle:'dotted', borderColor:settings.dimColor,			     
+      flex:5, paddingTop:6, paddingBottom:6, paddingLeft:4, paddingRight:4, backgroundColor:settings.screenBgColor2			     
     },
     performanceDateInput: {
-      color:settings.editableTextColor, backgroundColor:'white', textAlign:'center'
+      color:settings.editableTextColor, backgroundColor:'white', textAlign:'center', padding:2
     },  
 		editTableCell: {
 			marginLeft:-1, marginTop: -1,

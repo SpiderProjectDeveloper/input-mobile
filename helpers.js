@@ -1,46 +1,24 @@
-﻿import { settings } from './settings.js';
+﻿import React from 'react';
+import { View, Text } from 'react-native';
+import { settings } from './settings.js';
+import { styles } from './styles.js';
 
 export function logHelper(...s) {
-	//return;
-	console.log(s);
+	return;
+	//console.log(s);
 }
 
-export function getStatusTextHelper(status) {
-	return settings.messages[settings.lang][status];
-  if( status === settings.statusLoginRequierd )
-    return 'Please log in';
-  if( status === settings.statusLoggingIn )
-    return 'Please wait while logging in';
-  if( status === settings.statusLoginFailed )
-    return 'Invalid login or password';
-  if( status === settings.statusLoginRequestFailed )
-    return 'Login failed. No connection with SP?';
-  if( status === settings.statusLoggingOut )
-    return 'Please wait while logging out';
-  
-  if( status === settings.statusProjectListBeingLoaded )
-    return 'Please wait while loading available projects';
-  if( status === settings.statusProjectListRequestFailed )
-    return 'Failed to load available projects';
-  if( status === settings.statusProjectListLoaded )
-    return 'Choose a project to edit';
-  
-  if( status === settings.statusDataBeingLoaded )
-    return 'Please wait while loading the data';
-  if( status === settings.statusDataLoadFailed ) 
-    return 'Data load failed';
-  if( status === settings.statusDataLoaded ) 
-    return 'You may now edit your data';
-  if( status === settings.statusDataChanged )
-    return 'Data changed!';
-  if( status === settings.statusDataBeingSaved )
-    return 'Please wait while saving the data';
-  if( status === settings.statusDataSaveFailed )
-    return 'Error saving data. Please, try again';
-  if( status === settings.statusDataBeingUnloaded ) 
-    return 'Please wait while unloading data';
-  if( status === settings.statusExitingWithoutSave )
-    return 'Your data are not saved. Leave anyway?';
+export function getStatusTextHelper(status, params ) {
+	if( params.projectChosen === null || !params.statuses.includes(status) ) {	
+		return (<Text style={styles.upperPrompt}>{settings.messages[settings.lang][status]}</Text>);
+	} else {
+		return (
+			<View style={{flexDirection:'row'}}>
+				{settings.fileIcon}
+				<Text style={ [ styles.upperPrompt, {fontStyle:'normal'} ] }>{params.projectChosen}</Text>
+			</View>
+		);
+	}
 };    
 
 export function makeUrlHelper( cr ) {
@@ -205,4 +183,29 @@ export function isEmptyStringHelper( s ) {
 		} 
 	}
 	return true;
+}
+
+
+export function groupProjectListHelper( srcList ) {
+	if( typeof(srcList) === 'undefined' || srcList === null ) {
+		return {};
+	}
+	let re = new RegExp(/^(.*)\.([0-9]+)\.sprj$/, 'i');
+	let dstList = {};
+	for( let i = 0 ; i < srcList.length ; i++ ) {
+		let s = srcList[i];
+		let m = s.match(re);
+		if( m === null || m.length !== 3 ) {
+			continue;
+		}
+		let key = m[1];
+		if( !(key in dstList) ) {
+			dstList[ key ] = [];
+		}
+		dstList[ key ].push(m[2]);
+	}	
+	for( let key in dstList ) {
+		dstList[ key ].reverse();
+	}	
+	return dstList;
 }
