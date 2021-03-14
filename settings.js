@@ -15,13 +15,15 @@ export const settings = {
 				server: "Server",
 				port: "Port",
 				user: "User",
-				password: "Password"
+				password: "Password",
+				versionShort: 'ver.'
 			},
 			ru:  {
 				server: "Сервер",
 				port: "Порт",
 				user: "Пользователь",
-				password: "Пароль"
+				password: "Пароль",
+				versionShort: 'вер.'
 			},
 		},
 
@@ -37,6 +39,8 @@ export const settings = {
 
     nextPageDownButton: <AntDesign name="caretdown" size={20} color="lightgray"/>,
 		nextPageUpButton: <AntDesign name="caretup" size={20} color="lightgray"/>,
+
+		infoIcon: <AntDesign name="info" size={16} color="#ffffff" />,
 
 		defaultCellWidth: 140,
 		tableCellFontSize:14,
@@ -62,6 +66,9 @@ export const settings = {
     statusProjectListBeingLoaded: 'projectListBeingLoaded',
     statusProjectListRequestFailed: 'projectListRequestFailed',
     statusProjectListLoaded: 'projectListLoaded',
+		statusProjectInfoBeingLoaded: 'projectInfoBeingLoaded',
+		statusProjectInfoLoadFailed: 'projectInfoLoadFailed',
+		statusProjectInfoLoaded: 'projectInfoLoaded',
     statusDataBeingLoaded: 'dataBeingLoaded',
     statusDataLoadFailed: 'dataLoadFailed',
     statusDataLoaded: 'dataLoaded',
@@ -81,6 +88,9 @@ export const settings = {
 				projectListBeingLoaded: 'Loading projects available',
 				projectListRequestFailed: 'Failed to load projects',
 				projectListLoaded: 'Select a project to edit',
+				projectInfoBeingLoaded: 'Loading project info...',
+				projectInfoLoadFailed: 'Failed to load project info',
+				projectInfoLoaded: 'Project info loaded',
 				dataBeingLoaded: 'Please wait while loading project',
 				dataLoadFailed: 'Failed to load project',
 				dataLoaded: 'Now you may edit the data',
@@ -99,6 +109,9 @@ export const settings = {
 				projectListBeingLoaded: 'Загружается список проектов',
 				projectListRequestFailed: 'Ошибка при загрузке списка проектов',
 				projectListLoaded: 'Выберите проект',
+				projectInfoBeingLoaded: 'Загружается информация по проекту...',
+				projectInfoLoadFailed: 'Не удалось загрузить информацию по проекту',
+				projectInfoLoaded: 'Информация по проекту загружена',
 				dataBeingLoaded: 'Данные загружаются...',
 				dataLoadFailed: 'Ошибка при загрузке данных',
 				dataLoaded: 'Можно редактировать данные',

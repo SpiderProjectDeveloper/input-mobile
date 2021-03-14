@@ -19,7 +19,10 @@ export default class  App extends Component  {
       },
       projectList: null,
 			projectChosen: null,
-      status: settings.statusLoginRequired
+			projectInfo: {
+				versionIndex: null, version: null, name: null, date: null, notes: null 
+			},
+			status: settings.statusLoginRequired
     };
 		this._sessId = null;
     this._rawData = null; 
@@ -30,6 +33,7 @@ export default class  App extends Component  {
 
     this.onLogin = this.onLogin.bind(this);
     this.onLogout = this.onLogout.bind(this);
+		this.onGetProjectInfo = this.onGetProjectInfo.bind(this);
     this.onOpenProject = this.onOpenProject.bind(this);
     this.loadProjects = this.loadProjects.bind(this);
     this.onSaveProject = this.onSaveProject.bind(this);
@@ -139,6 +143,38 @@ export default class  App extends Component  {
 			});
 		});
   }
+
+	onGetProjectInfo(projectName, projectVersion, versionIndex) {
+			if( this.state.status === settings.statusProjectInfoBeingLoaded )
+				return;
+			let fileName = projectName + "." + projectVersion + ".sprj";
+			this.setState( { status: settings.statusProjectInfoBeingLoaded }, function() {
+				fetch( makeUrlHelper(this.state.credentials), {
+						method:'POST',
+						body: JSON.stringify({ command:'openFile', sessId:this._sessId, fileName: fileName})
+				}).
+				then( response => response.json()).
+				then( d => {
+					if( !('errcode' in d) || d.errcode != 0 ) {
+						this.setState({ status: settings.statusProjectInfoLoadFailed });        
+					} else {
+						logHelper(d);
+						this.setState({ status: settings.statusProjectInfoLoaded, 
+							projectInfo: { versionIndex: versionIndex, version:d.project.Version, 
+								name: d.project.Name, date: d.project.CurTime, notes: d.project.Notes } });
+					}
+				}).
+				catch( (e) => {
+					if( settings.fakeConnection ) {
+						this.setState({ status: settings.statusProjectInfoLoaded, 
+							projectInfo: { versionIndex: versionIndex, version:'001', name: 'Project Name', date: null } });
+					} else {
+						this.setState({ status: settings.statusProjectInfoLoadFailed });
+					}        
+				});
+			});
+	}
+
 
   onOpenProject( projectName, projectVersion ) {
 		if( this.state.status === settings.statusDataBeingLoaded )
@@ -265,10 +301,7 @@ export default class  App extends Component  {
   closeProject() {
 		if( this.state.status === settings.statusDataBeingUnloaded )
 			return;
-		// this._rawData = null; // Make it slower when uncommented
-		logHelper('setting status data being unloaded');
     this.setState( { status: settings.statusDataBeingUnloaded }, function() {
-			logHelper({command:'closeFile', sessId:this._sessId, docHandle:this._docHandle });
 			fetch( makeUrlHelper(this.state.credentials), 
 				{
 					method: 'POST',
@@ -307,12 +340,13 @@ export default class  App extends Component  {
     let loginViewStatuses = [ settings.statusLoginRequired, settings.statusLoginFailed, 
       settings.statusLoginRequestFailed, settings.statusLoggingIn ];
     let listViewStatuses = [ settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
-      settings.statusProjectListLoaded, settings.statusDataBeingLoaded, settings.statusDataLoadFailed ];
+      settings.statusProjectListLoaded, settings.statusDataBeingLoaded, settings.statusDataLoadFailed,
+			settings.statusProjectInfoBeingLoaded, settings.statusProjectInfoLoadFailed, settings.statusProjectInfoLoaded ];
 
 		let upperPrompt = getUpperPrompHelper( this.state.status, 
 			{ projectChosen: this.state.projectChosen, 
 				statuses: [settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
-				settings.statusProjectListLoaded] } );
+					settings.statusProjectListLoaded, settings.statusProjectInfoLoaded] } );
 
 			let view;
     if( loginViewStatuses.includes( this.state.status ) ) {
@@ -368,8 +402,9 @@ export default class  App extends Component  {
       let dates = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
         (<ProjectDetails project={this.state.projectChosen} 
 					disabled={disabled}
-					versions={this._grouppedProjectList[this.state.projectChosen]}  
-					onPress={this.onOpenProject} />) : null;
+					versions={this._grouppedProjectList[this.state.projectChosen]} 
+					projectInfo={this.state.projectInfo} 
+					onPress={this.onOpenProject} onInfo={this.onGetProjectInfo} />) : null;
       view = (
         <View style={styles.screenContainer}>
           {upperView}

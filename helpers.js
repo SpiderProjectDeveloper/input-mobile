@@ -4,8 +4,8 @@ import { settings } from './settings.js';
 import { styles } from './styles.js';
 
 export function logHelper(...s) {
-	return;
-	//console.log(s);
+	//return;
+	console.log(s);
 }
 
 export function getStatusTextHelper(status, params ) {
