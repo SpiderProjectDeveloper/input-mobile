@@ -21,7 +21,7 @@ export const styles = StyleSheet.create({
       backgroundColor:settings.activeButtonBgColor    
     },
     upperButton: {
-      textAlign:'center', color:'white', paddingTop:12, paddingBottom:12
+      textAlign:'center', color:'white', fontSize:18, paddingTop:12, paddingBottom:12
     },
     mainContainer: {
       flex:8, overflow:'scroll', alignItems: 'center', justifyContent: 'center', 

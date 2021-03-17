@@ -5,7 +5,8 @@ import { EditTable } from './EditTable.js';
 import { ProjectList } from './ProjectList.js';
 import { ProjectDetails } from './ProjectDetails.js';
 import { UpperButton } from './UpperButton.js';
-import { logHelper, getStatusTextHelper as getUpperPrompHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper } from './helpers.js';
+import { UpperPrompt } from './UpperPrompt.js';
+import { logHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper } from './helpers.js';
 import {styles} from './styles.js';
 import {settings} from './settings.js';
 
@@ -14,14 +15,12 @@ export default class  App extends Component  {
     super(props);
     
     this.state = {
+			lang: settings.lang,
       credentials: {
-        server: '192.168.1.28', port: '8080', user: 'user', password: 'user'
+        server: 'localhost', port: '8080', user: 'user', password: 'user'
       },
       projectList: null,
 			projectChosen: null,
-			projectInfo: {
-				versionIndex: null, version: null, name: null, date: null, notes: null 
-			},
 			status: settings.statusLoginRequired
     };
 		this._sessId = null;
@@ -33,7 +32,6 @@ export default class  App extends Component  {
 
     this.onLogin = this.onLogin.bind(this);
     this.onLogout = this.onLogout.bind(this);
-		this.onGetProjectInfo = this.onGetProjectInfo.bind(this);
     this.onOpenProject = this.onOpenProject.bind(this);
     this.loadProjects = this.loadProjects.bind(this);
     this.onSaveProject = this.onSaveProject.bind(this);
@@ -45,17 +43,7 @@ export default class  App extends Component  {
     this.setData = this.setData.bind(this);
     this.closeProject = this.closeProject.bind(this);
 		this.editTableCellChange = this.editTableCellChange.bind(this);
-
-		this.perfStartSetter = this.perfStartSetter.bind(this);
-		this.perfEndSetter = this.perfEndSetter.bind(this);
   }
-
-	perfStartSetter(v) {
-		this._perfStart = v;
-	}
-	perfEndSetter(v) {
-		this._perfEnd = v;
-	}
 
 	editTableCellChange( value, row, col ) {		
 		let code = this._rawData.fields[col].Code;
@@ -106,8 +94,7 @@ export default class  App extends Component  {
 		if( this.state.status === settings.statusDataBeingSaved || this.state.status === settings.statusDataBeingUnloaded) 
 			return;
     this.setState( { status: settings.statusDataBeingSaved }, function() {
-			logHelper('saveProject:', { command: 'setActualPerformance', sessId: this._sessId, 
-				docHandle: this._docHandle, array: this._rawData.array });
+			logHelper('saveProject:', { command: 'setActualPerformance', sessId: this._sessId, docHandle: this._docHandle, array: this._rawData.array });
 			fetch( makeUrlHelper(this.state.credentials), 
 				{ 
 					method: 'POST', 
@@ -118,7 +105,6 @@ export default class  App extends Component  {
 				}).
 			then( response => response.json()).
 			then( d => {
-				logHelper(d);
 				if( !('errcode' in d) || d.errcode != 0 ) {
 					throw new Error('');
 				} else {
@@ -130,7 +116,6 @@ export default class  App extends Component  {
 			}).
 			then( response => response.json()).
 			then( d => {
-				logHelper(d);
 				if( !('errcode' in d) || d.errcode != 0 ) {
 					throw new Error('');
 				} else {
@@ -138,42 +123,10 @@ export default class  App extends Component  {
 				}
 			}).
 			catch( (e) => {
-				logHelper(e);
 				this.setState({ status: settings.statusDataSaveFailed });
 			});
 		});
   }
-
-	onGetProjectInfo(projectName, projectVersion, versionIndex) {
-			if( this.state.status === settings.statusProjectInfoBeingLoaded )
-				return;
-			let fileName = projectName + "." + projectVersion + ".sprj";
-			this.setState( { status: settings.statusProjectInfoBeingLoaded }, function() {
-				fetch( makeUrlHelper(this.state.credentials), {
-						method:'POST',
-						body: JSON.stringify({ command:'openFile', sessId:this._sessId, fileName: fileName})
-				}).
-				then( response => response.json()).
-				then( d => {
-					if( !('errcode' in d) || d.errcode != 0 ) {
-						this.setState({ status: settings.statusProjectInfoLoadFailed });        
-					} else {
-						logHelper(d);
-						this.setState({ status: settings.statusProjectInfoLoaded, 
-							projectInfo: { versionIndex: versionIndex, version:d.project.Version, 
-								name: d.project.Name, date: d.project.CurTime, notes: d.project.Notes } });
-					}
-				}).
-				catch( (e) => {
-					if( settings.fakeConnection ) {
-						this.setState({ status: settings.statusProjectInfoLoaded, 
-							projectInfo: { versionIndex: versionIndex, version:'001', name: 'Project Name', date: null } });
-					} else {
-						this.setState({ status: settings.statusProjectInfoLoadFailed });
-					}        
-				});
-			});
-	}
 
 
   onOpenProject( projectName, projectVersion ) {
@@ -195,12 +148,7 @@ export default class  App extends Component  {
 				}
 			}).
 			catch( (e) => {
-				if( settings.fakeConnection ) {
-					this._docHandle = '00000000';
-					this.getScheduledPerformance(null);
-				} else {
-					this.setState({ status: settings.statusDataLoadFailed });
-				}        
+				this.setState({ status: settings.statusDataLoadFailed });				       
 			});
 		});
   }
@@ -217,10 +165,7 @@ export default class  App extends Component  {
       this.setData(d);
     }).
     catch( (e) => {
-			if( settings.fakeConnection )
-				this.setData(null);
-			else 
-      	this.setState({ status:settings.statusDataLoadFailed });
+      this.setState({ status:settings.statusDataLoadFailed });
     });
   }
   
@@ -245,10 +190,7 @@ export default class  App extends Component  {
 				}
 			}).
 			catch( (e) => {
-				if( settings.fakeConnection )
-					this.setState({ status: settings.statusProjectListLoaded, projectList: ['project #1', 'project #2'] });
-				else
-					this.setState({status: settings.statusProjectListRequestFailed});
+				this.setState({status: settings.statusProjectListRequestFailed});
 			});
 		});
   }
@@ -273,10 +215,7 @@ export default class  App extends Component  {
       }  
     }).
     catch( (e) => {
-			if( settings.fakeConnection ) 
-				this.loadProjects({sessId:0});
-			else 
-      	this.setState({ status: settings.statusLoginRequestFailed });
+      this.setState({ status: settings.statusLoginRequestFailed });
     });
   }
 
@@ -310,7 +249,6 @@ export default class  App extends Component  {
 			).
 			then( response => response.json()).
 			then( d => {
-				logHelper('closeProject:', d)
 				this.setState( { status: settings.statusProjectListLoaded } );
 			}).
 			catch( (e) => {
@@ -340,40 +278,37 @@ export default class  App extends Component  {
     let loginViewStatuses = [ settings.statusLoginRequired, settings.statusLoginFailed, 
       settings.statusLoginRequestFailed, settings.statusLoggingIn ];
     let listViewStatuses = [ settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
-      settings.statusProjectListLoaded, settings.statusDataBeingLoaded, settings.statusDataLoadFailed,
-			settings.statusProjectInfoBeingLoaded, settings.statusProjectInfoLoadFailed, settings.statusProjectInfoLoaded ];
-
-		let upperPrompt = getUpperPrompHelper( this.state.status, 
-			{ projectChosen: this.state.projectChosen, 
-				statuses: [settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
-					settings.statusProjectListLoaded, settings.statusProjectInfoLoaded] } );
-
-			let view;
+      settings.statusProjectListLoaded, settings.statusDataBeingLoaded, settings.statusDataLoadFailed ];
+		
+		let view;
     if( loginViewStatuses.includes( this.state.status ) ) {
       // LOGIN VIEW
       view = (
         <View style={styles.screenContainer}>
           <View style={styles.upperContainer}>
-            <View style={styles.upperPromptContainer}>          
-              {upperPrompt}
-            </View>
+						<UpperButton onPress={ () => { 
+								settings.lang = (this.state.lang === 'en') ? 'ru' : 'en';
+								this.setState({ lang: (this.state.lang === 'en') ? 'ru' : 'en' }) 
+							} } 
+							text={settings.lang} />
+						<UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
 						{ 
 						(this.state.status !== settings.statusLoggingIn ) ? 
 							(<UpperButton onPress={this.onLogin} text={settings.loginButton} />) : null //(<Pressable onPress={this.onLogin} style={styles.upperButtonContainer}><Text title={'Login'} style={styles.upperButton}>{settings.loginButton}</Text></Pressable>) : null 
 						}
           </View>
           <View style={styles.mainContainer}>
-            <Text style={styles.loginPageSubHeader}>{settings.texts[settings.lang].server}</Text>
+            <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].server}</Text>
             <TextInput value={this.state.credentials.server} style={styles.input} placeholder={settings.serverText} 
               onChangeText={ (server) => this.setState({ credentials: {...this.state.credentials, server} }) } />
-            <Text style={styles.loginPageSubHeader}>{settings.texts[settings.lang].port}</Text>
+            <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].port}</Text>
             <TextInput value={this.state.credentials.port} style={styles.input} placeholder={settings.portText} 
               onChangeText={(port) => this.setState({ credentials: {...this.state.credentials, port} }) }/>
-            <Text style={ [styles.loginPageSubHeader, {paddingTop:24 } ] }>{settings.texts[settings.lang].user}</Text>
+            <Text style={ [styles.loginPageSubHeader, {paddingTop:24 } ] }>{settings.texts[this.state.lang].user}</Text>
 
             <TextInput value={this.state.credentials.user} style={styles.input} placeholder={settings.userText} 
               onChangeText={(user) => this.setState({ credentials: {...this.state.credentials, user} }) } />
-            <Text style={styles.loginPageSubHeader}>{settings.texts[settings.lang].password}</Text>
+            <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].password}</Text>
             <TextInput value={this.state.credentials.password} placeholder={settings.passwordText} style={styles.input} 
               onChangeText={(password) => this.setState({ credentials: {...this.state.credentials, password} }) } />
           </View>
@@ -383,9 +318,7 @@ export default class  App extends Component  {
       // LIST OF PROJECTS
       let upperView = (
         <View style={styles.upperContainer}>
-          <View style={styles.upperPromptContainer}>          
-            {upperPrompt}
-          </View>
+					<UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
 					{
 					(this.state.status !== settings.statusDataBeingLoaded && this.state.status !== settings.statusDataBeingUnloaded) ?
 						<UpperButton onPress={this.onLogout} text={settings.logoutButton} /> : null // (<View style={styles.upperButtonContainer}><Text title={'Logout'} style={styles.upperButton} onPress={this.onLogout}>{settings.logoutButton}</Text></View>) : null
@@ -402,9 +335,9 @@ export default class  App extends Component  {
       let dates = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
         (<ProjectDetails project={this.state.projectChosen} 
 					disabled={disabled}
-					versions={this._grouppedProjectList[this.state.projectChosen]} 
-					projectInfo={this.state.projectInfo} 
-					onPress={this.onOpenProject} onInfo={this.onGetProjectInfo} />) : null;
+					versions={this._grouppedProjectList[this.state.projectChosen]}
+					credentials={this.state.credentials} sessId={this._sessId} 
+					onPress={this.onOpenProject} />) : null;
       view = (
         <View style={styles.screenContainer}>
           {upperView}
@@ -429,7 +362,7 @@ export default class  App extends Component  {
         upperView = (
           <View style={styles.upperContainer}>
 						<UpperButton onPress={this.onExitWithoutSave} text={settings.yesButton} style={{backgroundColor:settings.warningColor}}/>
-            <View style={styles.upperPromptContainer}>{upperPrompt}</View>
+            <UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
 						<UpperButton onPress={this.onCancelExitingWithoutSave} text={settings.noButton}/>
           </View>
         );
@@ -443,9 +376,7 @@ export default class  App extends Component  {
 							(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
             		(<UpperButton onPress={this.onSaveProject} text={settings.saveButton} style={{backgroundColor:bgColor}}/>) : null
 						}
-            <View style={styles.upperPromptContainer}>          
-              {upperPrompt}
-            </View>
+            <UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
 						{
 							(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
 								(<UpperButton onPress={this.onBackToProjects} text={settings.backToProjectsButton}/>) : null

@@ -12,6 +12,7 @@ export class EditField extends Component {
       type: (typeof(this.props.type) !== 'undefined') ? this.props.type : 'text',
 			editable: (typeof(this.props.editable) !== 'undefined') ? this.props.editable : true
     };
+		this._propValue = this.props.value;
 
 		this.onChange = this.onChange.bind(this);
 		this.onBlur = this.onBlur.bind(this);
@@ -57,10 +58,16 @@ export class EditField extends Component {
 	}
 
 	render() {
+		let value;
+		if( this._propValue !== this.props.value ) {
+			value = (typeof(this.props.value) !== 'undefined') ? this.props.value : '';
+		} else {
+			value = this.state.value;
+		}
 		if( this.state.editable ) {
 			return(
 					<View style={ ( typeof(this.props.viewStyle) !== 'undefined') ? this.props.viewStyle : {} }>
-						<TextInput value={this.state.value} 
+						<TextInput value={value} 
 							editable={this.state.editable}
 							placeholder={ ( typeof(this.props.placeholder) !== 'undefined') ? 
 								this.props.placeholder : 'Please, enter a value' }

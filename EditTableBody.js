@@ -6,7 +6,6 @@ import { settings } from './settings.js';
 import { styles } from './styles.js';
 
 class ScrollVisualHelper extends Component {
-
 	constructor(props) {
 		super(props);
 
@@ -15,10 +14,15 @@ class ScrollVisualHelper extends Component {
 		}
 
 		this._visible = null;
+		this.onPress = this.onPress.bind(this);
 	}
 
-	shouldComponentUpdate( nextProps, textState ) {
-		if( this._visible === nextProps.visible ) {
+	onPress() {
+		this.props.onScrollHandler();
+	}
+
+	shouldComponentUpdate( nextProps, nextState ) {
+		if( this._visible === nextProps.visible && (this.state.fetching === nextState.fetching) ) {
 			return false;
 		}
 		return true;
@@ -32,11 +36,11 @@ class ScrollVisualHelper extends Component {
 		let scrollCells=[];
 		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) {				
 			scrollCells.push(
-				<Pressable key={i} onPress={this.props.onScrollHandler}>          
+				<Pressable key={i} onPress={this.onPress}>          
 					<Text key={i}  
 						style={ [ styles.editTableReadOnlyCell, {width: this.props.widths[i]} ] }>
 						{ 
-							'...'
+							(!this.state.fetching) ? '...' : 'wait...'
 							//(this.props.dir === 'up' ) ? settings.nextPageUpButton : settings.nextPageDownButton
 						}
 					</Text>

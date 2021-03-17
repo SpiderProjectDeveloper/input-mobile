@@ -4,22 +4,10 @@ import { settings } from './settings.js';
 import { styles } from './styles.js';
 
 export function logHelper(...s) {
-	//return;
-	console.log(s);
-}
-
-export function getStatusTextHelper(status, params ) {
-	if( params.projectChosen === null || !params.statuses.includes(status) ) {	
-		return (<Text style={styles.upperPrompt}>{settings.messages[settings.lang][status]}</Text>);
-	} else {
-		return (
-			<View style={{flexDirection:'row'}}>
-				{settings.fileIcon}
-				<Text style={ [ styles.upperPrompt, {fontStyle:'normal'} ] }>{params.projectChosen}</Text>
-			</View>
-		);
+	if( settings.log ) {
+		console.log(s);
 	}
-};    
+}
 
 export function makeUrlHelper( cr ) {
   return 'http://' + cr.server + ':' + cr.port;

@@ -3,12 +3,11 @@ import { AntDesign } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
 
 export const settings = {
+		log: false,
 		window: Dimensions.get('window'),
+		lang: 'en',
+
 		editTableInitialLoad: 24,
-
-		fakeConnection: false,
-
-		lang: 'ru',
 
 		texts: {
 			en: {
@@ -76,6 +75,7 @@ export const settings = {
     statusDataBeingSaved: 'dataBeingSaved',
     statusDataSaveFailed: 'dataSaveFailed',
     statusDataBeingUnloaded: 'dataBeingUnloaded',
+		statusScrollingData: 'scrollingData',
     statusExitingWithoutSave: 'exitingWithoutSave',
 
 		messages: {
@@ -98,6 +98,7 @@ export const settings = {
 				dataBeingSaved: 'Please wait while saving your data',
 				dataSaveFailed: 'Failed to save your data',
 				dataBeingUnloaded: 'Please wait...',
+				scrollingData: 'Scrolling...',
 				exitingWithoutSave: 'Your data are not saved and wil be lost. Continue?'				
 			},
 			ru: {
@@ -119,6 +120,7 @@ export const settings = {
 				dataBeingSaved: 'Данные сохраняются...',
 				dataSaveFailed: 'Не удалось сохранить данные',
 				dataBeingUnloaded: 'Возврат к списку проектов...',
+				scrollingData: 'Данные подгружаются...',
 				exitingWithoutSave: 'Данные не сохранены и будут потеряны. Ок?'				
 			}
 		}
