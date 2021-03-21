@@ -17,7 +17,13 @@ export class EditField extends Component {
 		this.onChange = this.onChange.bind(this);
 		this.onBlur = this.onBlur.bind(this);
 		this.onFocus = this.onFocus.bind(this);
+		this.setValue = this.setValue.bind(this);
   }
+
+	setValue( value ) {
+		this._value = value;
+		this.setState( { value:value } );
+	}
 
 	onChange( value ) {
 		if( this.props.type === 'number' ) {
@@ -58,12 +64,7 @@ export class EditField extends Component {
 	}
 
 	render() {
-		let value;
-		if( this._propValue !== this.props.value ) {
-			value = (typeof(this.props.value) !== 'undefined') ? this.props.value : '';
-		} else {
-			value = this.state.value;
-		}
+		let value = this.state.value;
 		if( this.state.editable ) {
 			return(
 					<View style={ ( typeof(this.props.viewStyle) !== 'undefined') ? this.props.viewStyle : {} }>

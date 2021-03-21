@@ -26,12 +26,12 @@ export const settings = {
 			},
 		},
 
-    loginButton: <AntDesign name="user" size={20} color="white"/>,
-    logoutButton: <AntDesign name="logout" size={20} color="white"/>,
+    loginButton: <AntDesign name="user" size={20} color="white"/>,		// "log-in"
+    logoutButton: <AntDesign name="logout" size={20} color="white"/>, 	// "log-out"
     yesButton: <AntDesign name="check" size={20} color="white"/>,
     noButton: <AntDesign name="close" size={20} color="white"/>,
-    backToProjectsButton: <AntDesign name="left" size={20} color="white"/>,
-    saveButton: <AntDesign name="upload" size={20} color="white"/>,
+    backToProjectsButton: <AntDesign name="left" size={20} color="white"/>,	// an alternative icon: "back"
+    saveButton: <AntDesign name="upload" size={20} color="white"/>,	// an alternativr icon: "hdd"
 
 		loadingIcon: <AntDesign name="loading1" size={28} color="black" />,
 		fileIcon: <AntDesign name="file1" size={18} color="#004444" />,
@@ -39,7 +39,8 @@ export const settings = {
     nextPageDownButton: <AntDesign name="caretdown" size={20} color="lightgray"/>,
 		nextPageUpButton: <AntDesign name="caretup" size={20} color="lightgray"/>,
 
-		infoIcon: <AntDesign name="info" size={16} color="#ffffff" />,
+		infoIcon: <AntDesign name="infocirlceo" size={16} color="#2f2f2f" />,
+		openProjectIcon: <AntDesign name="rightsquareo" size={18} color="#2f2f2f"/>,
 
 		defaultCellWidth: 140,
 		tableCellFontSize:14,

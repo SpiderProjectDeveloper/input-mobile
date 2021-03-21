@@ -162,6 +162,11 @@ export function isValidDateTimeSymbolsHelper( value ) {
 	return !re.test(value);
 }
 
+export function isValidTimeInSecondsHelper( value ) {
+	let re = new RegExp(/^[0-9]+$/,'i'); // Testing invalid date time characters
+	return re.test(value);
+}
+
 
 export function isEmptyStringHelper( s ) {
 	for( let i = 0 ; i < s.length ; i++ ) {

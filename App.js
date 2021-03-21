@@ -26,8 +26,6 @@ export default class  App extends Component  {
 		this._sessId = null;
     this._rawData = null; 
 		this._docHandle = null;
-		this._perfStart = formatSpiderDateHelper( new Date(new Date() - 1000*60*60*24*7) );
-		this._perfEnd = formatSpiderDateHelper(new Date());
 		this._grouppedProjectList = null;
 
     this.onLogin = this.onLogin.bind(this);
@@ -94,17 +92,16 @@ export default class  App extends Component  {
 		if( this.state.status === settings.statusDataBeingSaved || this.state.status === settings.statusDataBeingUnloaded) 
 			return;
     this.setState( { status: settings.statusDataBeingSaved }, function() {
-			logHelper('saveProject:', { command: 'setActualPerformance', sessId: this._sessId, docHandle: this._docHandle, array: this._rawData.array });
+			let save = { command:'setActualPerformance', sessId:this._sessId, docHandle:this._docHandle, array:this._rawData.array };
+			logHelper('saveProject:', save);
 			fetch( makeUrlHelper(this.state.credentials), 
 				{ 
 					method: 'POST', 
-					body: JSON.stringify({ 
-						command: 'setActualPerformance', sessId: this._sessId, docHandle: this._docHandle, 
-						array: this._rawData.array
-					})
+					body: JSON.stringify(save)
 				}).
 			then( response => response.json()).
 			then( d => {
+				logHelper(d);
 				if( !('errcode' in d) || d.errcode != 0 ) {
 					throw new Error('');
 				} else {
@@ -129,7 +126,7 @@ export default class  App extends Component  {
   }
 
 
-  onOpenProject( projectName, projectVersion ) {
+  onOpenProject( projectName, projectVersion, perfStart, perfEnd ) {
 		if( this.state.status === settings.statusDataBeingLoaded )
 			return;
 		let fileName = projectName + "." + projectVersion + ".sprj";
@@ -140,11 +137,11 @@ export default class  App extends Component  {
 			}).
 			then( response => response.json()).
 			then( d => {
-				if( !('errcode' in d) || d.errcode != 0 ) {
+				if( !('errcode' in d) || d.errcode != 0 || !('docHandle' in d) ) {
 					this.setState({ status: settings.statusDataLoadFailed });        
 				} else {
 					this._docHandle = d.docHandle;
-					this.getScheduledPerformance(d);
+					this.getScheduledPerformance(d, perfStart, perfEnd);
 				}
 			}).
 			catch( (e) => {
@@ -153,16 +150,16 @@ export default class  App extends Component  {
 		});
   }
 
-  getScheduledPerformance( d ) {
-    fetch( makeUrlHelper(this.state.credentials), {
-        method:'POST',
-        body: JSON.stringify({ 
-          command:'getScheduledPerformance', sessId:this._sessId, docHandle: this._docHandle, 
-          from: this._perfStart, to: this._perfEnd })
-    }).
+  getScheduledPerformance( d, perfStart, perfEnd ) {
+		let req = { command:'getScheduledPerformance', sessId:this._sessId, docHandle: this._docHandle, from: perfStart, to: perfEnd };
+    fetch( makeUrlHelper(this.state.credentials), { method:'POST', body: JSON.stringify(req) }).
     then( response => response.json()).
     then( d => {
-      this.setData(d);
+			if( !('errcode' in d) || d.errcode != 0 ) {
+				this.setState({ status:settings.statusDataLoadFailed });
+			} else {
+				this.setData(d);
+			}
     }).
     catch( (e) => {
       this.setState({ status:settings.statusDataLoadFailed });
@@ -286,11 +283,15 @@ export default class  App extends Component  {
       view = (
         <View style={styles.screenContainer}>
           <View style={styles.upperContainer}>
-						<UpperButton onPress={ () => { 
-								settings.lang = (this.state.lang === 'en') ? 'ru' : 'en';
-								this.setState({ lang: (this.state.lang === 'en') ? 'ru' : 'en' }) 
-							} } 
-							text={settings.lang} />
+						{
+						(this.state.status !== settings.statusLoggingIn) ? 
+							(<UpperButton 
+								onPress={ () => { 
+									settings.lang = (this.state.lang === 'en') ? 'ru' : 'en';
+									this.setState({ lang: (this.state.lang === 'en') ? 'ru' : 'en' }) 
+								} } 
+								text={settings.lang} />) : null
+						}	
 						<UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
 						{ 
 						(this.state.status !== settings.statusLoggingIn ) ? 

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { View, ScrollView, Text, FlatList } from 'react-native';
 import { EditField } from './EditField.js';
-import { logHelper, makeUrlHelper, formatSpiderDateHelper } from './helpers.js';
+import { logHelper, makeUrlHelper, isValidTimeInSecondsHelper, formatSpiderDateHelper } from './helpers.js';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
 
@@ -17,11 +17,16 @@ export class ProjectDetails extends Component {
 			}
 		}
 
-		this._perfStart = formatSpiderDateHelper( new Date(new Date() - 1000*60*60*24*7), true );
-		this._perfEnd = formatSpiderDateHelper( new Date(), true );
+		this._lastProjectRendered = null;
+
+		this._perfStart = formatSpiderDateHelper( parseInt(Date.now()/1000), true );
+		this._perfEnd = formatSpiderDateHelper( parseInt((Date.now() + 1000*60*60*24*7)/1000), true );
 
 		this.perfStartSetter = this.perfStartSetter.bind(this);
 		this.perfEndSetter = this.perfEndSetter.bind(this);
+
+		this.perfStartRef = React.createRef();
+		this.perfEndRef = React.createRef();
 
 		this.getProjectInfo = this.getProjectInfo.bind(this);
 	}
@@ -54,9 +59,15 @@ export class ProjectDetails extends Component {
 				if( !('errcode' in d) || d.errcode != 0 ) {
 					this.setState({ fetching: false, fetchingOk: false });        
 				} else {
+					if( isValidTimeInSecondsHelper(d.project.CurTime) ) {
+						this._perfStart = formatSpiderDateHelper( parseInt(d.project.CurTime), true  );
+						this._perfEnd = formatSpiderDateHelper( parseInt(d.project.CurTime) + 60*60*24*7, true );			
+						this.perfStartRef.current.setValue(this._perfStart);
+						this.perfEndRef.current.setValue(this._perfEnd);
+					}
 					this.setState({ 
 						fetching: false, fetchingOk: true,
-						projectInfo: { versionIndex: versionIndex, version:d.project.Version, 
+						projectInfo: { versionIndex: versionIndex, version:d.project.Version,
 							name: d.project.Name, date: d.project.CurTime, notes: d.project.Notes } 
 					});
 				}
@@ -69,6 +80,12 @@ export class ProjectDetails extends Component {
 
 
 	render() {		
+		let pinfo = {...this.state.projectInfo};		
+		if( this._lastProjectRendered !== this.props.project ) {
+			pinfo.versionIndex = null;
+		}
+		this._lastProjectRendered = this.props.project;
+
 		let versions=[];
 		for( let i = 0 ; i < this.props.versions.length ; i++ ) {
 			let v = this.props.versions[i];
@@ -76,13 +93,12 @@ export class ProjectDetails extends Component {
 				<Text 								
 					key={String(i*2)}
 					style={{ marginTop:4, marginBottom:4, marginLeft:4, marginRight:0, padding:4, textAlign:'center',
-						textDecorationLine:'underline', textDecorationStyle:'dotted',
-						color: (!this.props.disabled) ? settings.linkColor : settings.dimColor, 
-						backgroundColor: (!this.props.disabled && this.state.projectInfo.versionIndex === i) ? '#efefef' : '#ffffff'
-					}}
+						backgroundColor: settings.activeButtonBgColor, borderRadius:2,
+						color:(!this.props.disabled) ? 'white' : settings.dimColor
+				}}
 					onPress={ () => {
 						if( !this.props.disabled ) { 
-							this.props.onPress(this.props.project, v) 
+							this.props.onPress(this.props.project, v, this._perfStart, this._perfEnd); 
 						}
 					}}>{v}
 				</Text>
@@ -91,9 +107,10 @@ export class ProjectDetails extends Component {
 				<Text 								
 					key={String(i*2+1)}
 					style={{ marginTop:4, marginBottom:4, marginLeft:0, marginRight:8, 
-						paddingTop:4, paddingBottom:4, paddingLeft:6, paddingRight:6,
-						textAlign:'center', backgroundColor: settings.activeButtonBgColor, borderRadius:2,
-						color:(!this.props.disabled) ? settings.linkColor : settings.dimColor
+						paddingTop:4, paddingBottom:4, paddingLeft:8, paddingRight:8, textAlign:'center', 
+						//textDecorationLine:'underline', textDecorationStyle:'dotted',
+						color: (!this.props.disabled) ? settings.linkColor : settings.dimColor, 
+						backgroundColor: (!this.props.disabled && pinfo.versionIndex === i) ? '#efefef' : '#ffffff'
 					}}
 					onPress={ () => {
 						if( !this.props.disabled ) { 
@@ -103,20 +120,8 @@ export class ProjectDetails extends Component {
 				</Text>
 			);
 		}
-		logHelper("date=", this.state.projectInfo.date);
-		if( typeof(this.state.projectInfo.date)==='undefined' || this.state.projectInfo.date === null ) {
-			this._perfStart = formatSpiderDateHelper( new Date(new Date() - 1000*60*60*24*7), true );
-			this._perfEnd = formatSpiderDateHelper( new Date(), true );	
-		} else {
-			this._perfStart = formatSpiderDateHelper( this.state.projectInfo.date );
-			this._perfEnd = formatSpiderDateHelper( this.state.projectInfo.date - 60*60*24*7 );	
-		}
-		logHelper("st=", this._perfStart, ", en=", this._perfEnd);
-
-
 
 		let pinfoComponent;
-		let pinfo = this.state.projectInfo;
 		let projectTextColor = (!this.props.disabled) ? settings.linkColor : settings.dimColor;
 		if( this.state.fetching ) {
 			pinfoComponent = (
@@ -130,18 +135,18 @@ export class ProjectDetails extends Component {
 			pinfoComponent = (
 				<View style={{marginBottom:4}}>
 					<Text style={{padding:4, fontStyle:'italic', color:settings.warningColor}}>
-						{settings.messages[settings.lang][settings.statusProjectInfoLoaded]}
+						{settings.messages[settings.lang][settings.statusProjectInfoLoadFailed]}
 					</Text> 
 				</View>
 			)
 		} else if( pinfo.versionIndex !== null ) {
 			pinfoComponent = (
-				<View style={{marginBottom:4}}>
+				<View horizontal={true} style={{marginBottom:4}}>
 					<Text 
 						style={{padding:4, color: projectTextColor, textDecorationLine:'underline', textDecorationStyle:'dotted'}}
 						onPress={() => {
 							if( !this.props.disabled ) { 
-								this.props.onPress(this.props.project, this.props.versions[pinfo.versionIndex]) 
+								this.props.onPress(this.props.project, this.props.versions[pinfo.versionIndex], this._perfStart, this._perfEnd) 
 							}
 						}}		
 					>
@@ -160,10 +165,10 @@ export class ProjectDetails extends Component {
 		return(
 			<View style={styles.projectDetailsContainer}>
 				<View style={styles.performanceDatesContainer}>
-					<EditField disabled={this.props.disabled} 
+					<EditField disabled={this.props.disabled} ref={this.perfStartRef}
 						style={editFieldStyle} viewStyle={styles.performanceDate} type={'datetime'}
 						value={this._perfStart} setter={this.perfStartSetter} placeholder={'Start Date'} />							
-					<EditField disabled={this.props.disabled}
+					<EditField disabled={this.props.disabled} ref={this.perfEndRef}
 						style={editFieldStyle} viewStyle={styles.performanceDate} type={'datetime'}
 						value={this._perfEnd} setter={this.perfEndSetter} placeholder={'End Date'} />
 				</View>

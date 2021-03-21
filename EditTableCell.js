@@ -57,7 +57,6 @@ export class EditTableCell extends Component {
 		} else {
 			this._updatedValue = value; 
 		}
-		logHelper(this._originalValue, this._updatedValue);
 		this.setState({ value: value });
 	}
 
@@ -96,7 +95,8 @@ export class EditTableCell extends Component {
 		}
 		
 		if( updated ) {
-			this.props.editTableCellChange( newSpiderValue, this.state.row, this.state.col );
+			//if( 'editTableCellChange' in props)
+				this.props.editTableCellChange( newSpiderValue, this.state.row, this.state.col );
 			newState.updated = true;
 		} 
 		this.setState( newState );

@@ -44,8 +44,6 @@ export class EditTable extends Component {
 	}
 
 	render() {
-		logHelper('Rendering edit table!');
-
 		if( typeof(this.props.data) === 'undefined' || this.props.data === null || 
 				typeof(this.props.data.array) === 'undefined' || this.props.data.array === null || this.props.data.array.length === 0 ||
 				typeof(this.props.data.fields) === 'undefined' || this.props.data.fields === null || this.props.data.fields.length === 0 )
@@ -66,7 +64,8 @@ export class EditTable extends Component {
 				<ScrollView horizontal={true}>
 					<View style={{flexDirection:'column'}}>
 						<View style={{ flexDirection:'row' }}>{headCells}</View>
-						<EditTableBody data={this.props.data} types={this._types} widths={this._widths} editables={this._editables}/>
+						<EditTableBody data={this.props.data} types={this._types} widths={this._widths} editables={this._editables}
+							editTableCellChange={this.props.editTableCellChange}/>
 					</View>
 				</ScrollView>
 		);

@@ -48,10 +48,10 @@ export const styles = StyleSheet.create({
 			borderStyle:'dotted', borderBottomWidth:1, borderBottomColor:settings.dimColor,			
     },
 		projectListItem: { 
-      paddingLeft:4, paddingTop:0, color: settings.linkColor 
+      padding:4, color: settings.linkColor 
     },
 		projectListChosenItem: { 
-      paddingLeft:4, paddingTop:0, color: settings.linkColor, fontWeight:'bold' 
+      padding:4, color: settings.linkColor, backgroundColor:'#efefef' 
     },
     projectDetailsContainer: {
       flexDirection:'column', backgroundColor:settings.screenBgColor2, marginBottom:8, padding:4
