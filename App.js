@@ -6,14 +6,16 @@ import { ProjectList } from './ProjectList.js';
 import { ProjectDetails } from './ProjectDetails.js';
 import { UpperButton } from './UpperButton.js';
 import { UpperPrompt } from './UpperPrompt.js';
-import { logHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper } from './helpers.js';
+import { readStorage, writeStorage } from './storage.js';
+import { logHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper, 
+	makeFieldsCacheHelper, makeArrayCacheKeyHelper, makeArrayCacheHelper } from './helpers.js';
 import {styles} from './styles.js';
 import {settings} from './settings.js';
 
-export default class  App extends Component  {  
+export default class App extends Component {  
   constructor(props) {
     super(props);
-    
+
     this.state = {
 			lang: settings.lang,
       credentials: {
@@ -23,108 +25,102 @@ export default class  App extends Component  {
 			projectChosen: null,
 			status: settings.statusLoginRequired
     };
+
+		this._rawData = null; 
+		this._dataFieldsColCache= null;
+		this._dataArrayRowCache = null;    
+
 		this._sessId = null;
-    this._rawData = null; 
 		this._docHandle = null;
 		this._grouppedProjectList = null;
 
-    this.onLogin = this.onLogin.bind(this);
-    this.onLogout = this.onLogout.bind(this);
-    this.onOpenProject = this.onOpenProject.bind(this);
-    this.loadProjects = this.loadProjects.bind(this);
-    this.onSaveProject = this.onSaveProject.bind(this);
+		this.onLogin = this.onLogin.bind(this);
+		this.onLogout = this.onLogout.bind(this);
+		this.onOpenProject = this.onOpenProject.bind(this);
+		this.loadProjects = this.loadProjects.bind(this);
 		this.onProjectChosen = this.onProjectChosen.bind(this);
-    this.onExitWithoutSave = this.onExitWithoutSave.bind(this);
-    this.onCancelExitingWithoutSave = this.onCancelExitingWithoutSave.bind(this);
-    this.onBackToProjects = this.onBackToProjects.bind(this);
-    this.getScheduledPerformance = this.getScheduledPerformance.bind(this);
-    this.setData = this.setData.bind(this);
-    this.closeProject = this.closeProject.bind(this);
+		this.getScheduledPerformance = this.getScheduledPerformance.bind(this);
+		this.closeProject = this.closeProject.bind(this);
 		this.editTableCellChange = this.editTableCellChange.bind(this);
+		this.fetchEditTableCellChange = this.fetchEditTableCellChange.bind(this);
+
+		readStorage('lang').then( lang => { this.setState({lang:lang}) } ).catch( e=>{ }	);
+		readStorage('server').
+			then( server => { this.setState({ credentials:{...this.state.credentials, server} }) } ).catch( e=>{ } );
+		readStorage('port').
+			then( port => { this.setState({ credentials:{...this.state.credentials, port} }) } ).catch( e=>{ } );
+		readStorage('user').
+			then( user => { this.setState({ credentials:{...this.state.credentials, user} }) } ).catch( e=>{ } );
+		readStorage('password').
+			then( password => { this.setState({ credentials:{...this.state.credentials, password} }) } ).catch( e=>{ } );
+
+		this._editTableRef = React.createRef();
+
+		this._perfStart='';
+		this._perfEnd='';
   }
 
-	editTableCellChange( value, row, col ) {		
-		let code = this._rawData.fields[col].Code;
-		if( value === null ) {
-			delete this._rawData.array[row][code];
-		} else {
-			this._rawData.array[row][code] = value;
-		}
-		this.setState({ status:settings.statusDataChanged });
+	editTableCellChange( cellValue, cellRow, cellCol ) {
+		this.setState( { status: settings.statusDataBeingSaved }, 
+			() => { this.fetchEditTableCellChange( cellValue, cellRow, cellCol ) } );
+	}
+
+	fetchEditTableCellChange( cellValue, cellRow, cellCol ) {
+		let cellCode = this._rawData.fields[cellCol].Code;
+		let toSend = { Code: this._rawData.array[cellRow].Code, Level: this._rawData.array[cellRow].Level };
+		toSend[ cellCode ] = cellValue;		
+		let req = { command:'setActualPerformance', sessId:this._sessId, docHandle: this._docHandle, 
+			from: this._perfStart, to: this._perfEnd, array: [ toSend ] };
+		logHelper(req);
+
+		fetch( makeUrlHelper(this.state.credentials), { method:'POST', body: JSON.stringify(req) }).
+		then( response => response.json()).
+		then( (d => {
+			logHelper("new values", d);
+			if( ('errcode' in d) && (d.errcode === 0) ) {
+				let cells = [];
+				let newDataArray = d.array; 	// Changes in data array to be made after editing a cell
+				for( let i = 0 ; i < newDataArray.length ; i++ ) {
+					let dataArrayRowCacheKey = makeArrayCacheKeyHelper(newDataArray[i].Level, newDataArray[i].Code);
+					if( dataArrayRowCacheKey in this._dataArrayRowCache) {
+						let row = this._dataArrayRowCache[dataArrayRowCacheKey];
+						for( let fieldKey in newDataArray[i] ) { 	// Iterating through the fields to be changed
+							if( fieldKey === 'Code' || fieldKey === 'Level' ) {		// Skipping if the one is a "Code" or a "Level"
+								continue;
+							}
+							if( fieldKey in this._dataFieldsColCache ) {		// 	
+								let col = this._dataFieldsColCache[fieldKey];
+								let newValue = newDataArray[i][fieldKey];
+								if( this._rawData.array[row][fieldKey] !== newValue ) {
+									cells.push({ row:row, col:col, value: newValue });
+									//delete this._rawData.array[row][code];
+									this._rawData.array[row][fieldKey] = newValue;					
+								}
+							}
+						}
+					}
+				}
+				logHelper("cells", cells);
+				this._editTableRef.current.updateTableBodyCells(cells);
+				this.setState({ status: settings.statusDataLoaded });
+			} else {		// If error setting back the old value to the cell changed
+				this._editTableRef.current.updateTableBodyCells( [
+					{ row:cellRow, col:cellCol, value: this._rawData.array[cellRow][cellCode] }
+				]);
+				this.setState({ status:settings.statusDataSaveFailed });
+			} 
+		}).bind(this) ).
+		catch( (e) => {		// If error setting back the old value to the cell changed
+			this._editTableRef.current.updateTableBodyCells( [
+				{ row:cellRow, col:cellCol, value: this._rawData.array[cellRow][cellCode] }
+			]);
+			this.setState({ status:settings.statusDataSaveFailed });
+		});
 	}
 
 	onProjectChosen(prj) {
 		this.setState( {projectChosen: prj} );
 	}
-
-  setData(data) {
-    if( data === null ) {
-      data = {
-        fields: [ 
-          {Code: "OperCode", Name:"Oper Code"}, {Code: "Start", Name:"Start", Type:'datetime' }, 
-          {Code: "Fin", Name:"Fin", Type:'datetime', editable:true}, 
-					{Code: "VolDone", Name:"Vol Done", Type:'number', editable:true}, 
-          {Code: "DurDone", Name:"Dur Done"}, {Code: "WorkLoadDone", Name:"WorkLoad Done", editable:true}
-        ],
-        array: [ 
-          { OperCode: "1", Start: 1168318900, Fin: 1168318900, VolDone: 50, DurDone:15}, { OperCode: "2", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "3", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "4", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15},
-          { OperCode: "1", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "2", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "3", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "4", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "1", Start: 1168318900, Fin: 1168318900, VolDone: 50, DurDone:15}, { OperCode: "2", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "3", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "4", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15},
-          { OperCode: "1", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "2", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "3", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "4", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "1", Start: 1168318900, Fin: 1168318900, VolDone: 50, DurDone:15}, { OperCode: "2", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, 
-          { OperCode: "3", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}, { OperCode: "4", Start: 1168318800, Fin: 1168318700, VolDone: 50, DurDone:15}
-        ]
-      };
-    }
-    logHelper('fields:', data.fields);
-    logHelper('array:', data.array);
-    
-    this._rawData = data;
-
-    this.setState({ status: settings.statusDataLoaded });
-  }
-
-  onSaveProject() {
-		if( this.state.status === settings.statusDataBeingSaved || this.state.status === settings.statusDataBeingUnloaded) 
-			return;
-    this.setState( { status: settings.statusDataBeingSaved }, function() {
-			let save = { command:'setActualPerformance', sessId:this._sessId, docHandle:this._docHandle, array:this._rawData.array };
-			logHelper('saveProject:', save);
-			fetch( makeUrlHelper(this.state.credentials), 
-				{ 
-					method: 'POST', 
-					body: JSON.stringify(save)
-				}).
-			then( response => response.json()).
-			then( d => {
-				logHelper(d);
-				if( !('errcode' in d) || d.errcode != 0 ) {
-					throw new Error('');
-				} else {
-					return fetch(makeUrlHelper(this.state.credentials), { 
-						method: 'POST', 
-						body: JSON.stringify({ command: 'saveFile', sessId: this._sessId, docHandle: this._docHandle })
-					});
-				}
-			}).
-			then( response => response.json()).
-			then( d => {
-				if( !('errcode' in d) || d.errcode != 0 ) {
-					throw new Error('');
-				} else {
-					this.setState({ status: settings.statusDataLoaded });
-				}
-			}).
-			catch( (e) => {
-				this.setState({ status: settings.statusDataSaveFailed });
-			});
-		});
-  }
-
 
   onOpenProject( projectName, projectVersion, perfStart, perfEnd ) {
 		if( this.state.status === settings.statusDataBeingLoaded )
@@ -154,13 +150,21 @@ export default class  App extends Component  {
 		let req = { command:'getScheduledPerformance', sessId:this._sessId, docHandle: this._docHandle, from: perfStart, to: perfEnd };
     fetch( makeUrlHelper(this.state.credentials), { method:'POST', body: JSON.stringify(req) }).
     then( response => response.json()).
-    then( d => {
+    then( (d => {
+			logHelper('getScheduledPerformance', d, "errocode", d.errcode);
 			if( !('errcode' in d) || d.errcode != 0 ) {
 				this.setState({ status:settings.statusDataLoadFailed });
 			} else {
-				this.setData(d);
+				this._perfStart = perfStart;
+				this._perfEnd = perfEnd;
+				logHelper('fields:', d.fields);
+				logHelper('array:', d.array);		
+				this._dataFieldsColCache = makeFieldsCacheHelper(d);
+				this._dataArrayRowCache = makeArrayCacheHelper(d);    
+				this._rawData = d;
+				this.setState({ status: settings.statusDataLoaded });
 			}
-    }).
+    }).bind(this) ).
     catch( (e) => {
       this.setState({ status:settings.statusDataLoadFailed });
     });
@@ -254,22 +258,6 @@ export default class  App extends Component  {
 		});
   }
 
-  onBackToProjects() {
-    if( this.state.status === settings.statusDataChanged || this.state.status === settings.statusDataSaveFailed ) {
-      this.setState( { status: settings.statusExitingWithoutSave } );
-      return;
-    }
-    // To logout...
-    this.closeProject();
-  }
-
-  onExitWithoutSave() {
-    this.closeProject(); 
-  }
-
-  onCancelExitingWithoutSave() {
-    this.setState({ status: settings.statusDataChanged });
-  }
 
   render() {
     let loginViewStatuses = [ settings.statusLoginRequired, settings.statusLoginFailed, 
@@ -287,12 +275,13 @@ export default class  App extends Component  {
 						(this.state.status !== settings.statusLoggingIn) ? 
 							(<UpperButton 
 								onPress={ () => { 
-									settings.lang = (this.state.lang === 'en') ? 'ru' : 'en';
-									this.setState({ lang: (this.state.lang === 'en') ? 'ru' : 'en' }) 
+									let lang = (this.state.lang === 'en') ? 'ru' : 'en';
+									this.setState({ lang: lang }); 
+									writeStorage('lang', lang);
 								} } 
-								text={settings.lang} />) : null
+								text={this.state.lang} />) : null
 						}	
-						<UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
+						<UpperPrompt lang={this.state.lang} status={this.state.status} project={this.state.projectChosen}/>
 						{ 
 						(this.state.status !== settings.statusLoggingIn ) ? 
 							(<UpperButton onPress={this.onLogin} text={settings.loginButton} />) : null //(<Pressable onPress={this.onLogin} style={styles.upperButtonContainer}><Text title={'Login'} style={styles.upperButton}>{settings.loginButton}</Text></Pressable>) : null 
@@ -301,17 +290,32 @@ export default class  App extends Component  {
           <View style={styles.mainContainer}>
             <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].server}</Text>
             <TextInput value={this.state.credentials.server} style={styles.input} placeholder={settings.serverText} 
-              onChangeText={ (server) => this.setState({ credentials: {...this.state.credentials, server} }) } />
+              onChangeText={ (server) => { 
+								this.setState({ credentials: {...this.state.credentials, server} });
+								writeStorage( 'server', server ); 
+							} 
+							}/>
             <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].port}</Text>
             <TextInput value={this.state.credentials.port} style={styles.input} placeholder={settings.portText} 
-              onChangeText={(port) => this.setState({ credentials: {...this.state.credentials, port} }) }/>
+              onChangeText={ (port) => {
+								this.setState({ credentials: {...this.state.credentials, port} }) 
+								writeStorage( 'port', port ); 
+							}
+							}/>
             <Text style={ [styles.loginPageSubHeader, {paddingTop:24 } ] }>{settings.texts[this.state.lang].user}</Text>
-
             <TextInput value={this.state.credentials.user} style={styles.input} placeholder={settings.userText} 
-              onChangeText={(user) => this.setState({ credentials: {...this.state.credentials, user} }) } />
+              onChangeText={ (user) => {
+								this.setState({ credentials: {...this.state.credentials, user} });
+								writeStorage( 'user', user ); 
+							} 
+							}/>
             <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].password}</Text>
             <TextInput value={this.state.credentials.password} placeholder={settings.passwordText} style={styles.input} 
-              onChangeText={(password) => this.setState({ credentials: {...this.state.credentials, password} }) } />
+              onChangeText={ (password) => { 
+								this.setState({ credentials: {...this.state.credentials, password} })
+								writeStorage( 'password', password ); 
+							} 
+							}/>
           </View>
         </View>
       );
@@ -319,7 +323,7 @@ export default class  App extends Component  {
       // LIST OF PROJECTS
       let upperView = (
         <View style={styles.upperContainer}>
-					<UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
+					<UpperPrompt lang={this.state.lang} status={this.state.status} project={this.state.projectChosen}/>
 					{
 					(this.state.status !== settings.statusDataBeingLoaded && this.state.status !== settings.statusDataBeingUnloaded) ?
 						<UpperButton onPress={this.onLogout} text={settings.logoutButton} /> : null // (<View style={styles.upperButtonContainer}><Text title={'Logout'} style={styles.upperButton} onPress={this.onLogout}>{settings.logoutButton}</Text></View>) : null
@@ -334,8 +338,7 @@ export default class  App extends Component  {
 				</View>);
 			let dateStatuses = [settings.statusProjectListBeingLoaded];
       let dates = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
-        (<ProjectDetails project={this.state.projectChosen} 
-					disabled={disabled}
+        (<ProjectDetails lang={this.state.lang} disabled={disabled} project={this.state.projectChosen} 
 					versions={this._grouppedProjectList[this.state.projectChosen]}
 					credentials={this.state.credentials} sessId={this._sessId} 
 					onPress={this.onOpenProject} />) : null;
@@ -352,39 +355,23 @@ export default class  App extends Component  {
       if(this._rawData !== null /*&& this.state.status !== settings.statusDataBeingUnloaded*/ ) {
         editTableView = (
 					<View style= {[ styles.mainContainer, { alignItems: 'flex-start', justifyContent: 'flex-start'} ]}>
-						<EditTable data={this._rawData} editTableCellChange={this.editTableCellChange}/>
+						<EditTable ref={this._editTableRef} lang={this.state.lang} 
+							data={this._rawData} editTableCellChange={this.editTableCellChange}/>
 					</View>
 				)
       } else {
         editTableView = <View style={styles.mainContainer}>{settings.loadingIcon}</View>
       }
-      let upperView;
-      if( this.state.status === settings.statusExitingWithoutSave ) {
-        upperView = (
-          <View style={styles.upperContainer}>
-						<UpperButton onPress={this.onExitWithoutSave} text={settings.yesButton} style={{backgroundColor:settings.warningColor}}/>
-            <UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
-						<UpperButton onPress={this.onCancelExitingWithoutSave} text={settings.noButton}/>
-          </View>
-        );
-      } else {
-        let bgColor = 
-          ([settings.statusDataChanged, settings.statusDataSaveFailed].includes(this.state.status)) ?
-            settings.activeButtonBgColor : settings.inactiveButtonBgColor;
-        upperView = (
-          <View style={styles.upperContainer}>
-						{ 
-							(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
-            		(<UpperButton onPress={this.onSaveProject} text={settings.saveButton} style={{backgroundColor:bgColor}}/>) : null
-						}
-            <UpperPrompt status={this.state.status} project={this.state.projectChosen}/>
-						{
-							(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
-								(<UpperButton onPress={this.onBackToProjects} text={settings.backToProjectsButton}/>) : null
-						}
-         </View>
-        );
-      }
+      let upperView = (
+				<View style={styles.upperContainer}>
+					<UpperPrompt lang={this.state.lang} status={this.state.status} project={this.state.projectChosen}/>
+					{
+						(this.state.status !== settings.statusDataBeingSaved && this.state.status !== settings.statusDataBeingUnloaded) ?
+							(<UpperButton onPress={this.closeProject} text={settings.backToProjectsButton}/>) : null
+					}
+				</View>
+			);
+      
       view = (
         <View style={styles.screenContainer}>
           {upperView}

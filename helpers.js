@@ -202,3 +202,28 @@ export function groupProjectListHelper( srcList ) {
 	}	
 	return dstList;
 }
+
+export function makeFieldsCacheHelper( data ) {
+	let fieldsCache = {};
+	for( let i = 0 ; i < data.fields.length ; i++ ) {
+		fieldsCache[ data.fields[i].Code ] = i;
+	}
+	return fieldsCache; 
+}
+
+export function makeArrayCacheKeyHelper( level, code ) {
+	if( typeof(level) === 'undefined' || level === null || (typeof(level) === 'string' && level.length === 0) ) {
+		level = 'none';
+	}
+	return '_' + level + '_' + code;
+}
+
+export function makeArrayCacheHelper( data ) {
+	let dataCache = {};
+	for( let i = 0 ; i < data.array.length ; i++ ) {
+		let d = data.array[i];
+		let key = makeArrayCacheKeyHelper( d.Level, d.Code );
+		dataCache[key] = i;
+	}	
+	return dataCache;
+}

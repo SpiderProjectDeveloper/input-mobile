@@ -127,7 +127,7 @@ export class ProjectDetails extends Component {
 			pinfoComponent = (
 				<View style={{marginBottom:4}}>
 					<Text style={{padding:4, fontStyle:'italic', color:settings.textColor}}>
-						{settings.messages[settings.lang][settings.statusProjectInfoBeingLoaded]}
+						{settings.messages[this.props.lang][settings.statusProjectInfoBeingLoaded]}
 					</Text> 
 				</View>
 			)
@@ -135,7 +135,7 @@ export class ProjectDetails extends Component {
 			pinfoComponent = (
 				<View style={{marginBottom:4}}>
 					<Text style={{padding:4, fontStyle:'italic', color:settings.warningColor}}>
-						{settings.messages[settings.lang][settings.statusProjectInfoLoadFailed]}
+						{settings.messages[this.props.lang][settings.statusProjectInfoLoadFailed]}
 					</Text> 
 				</View>
 			)
@@ -150,7 +150,7 @@ export class ProjectDetails extends Component {
 							}
 						}}		
 					>
-						{`${pinfo.name} (${settings.texts[settings.lang].versionShort} ${pinfo.version})`}
+						{`${pinfo.name} (${settings.texts[this.props.lang].versionShort} ${pinfo.version})`}
 						{(typeof(pinfo.notes) !== 'undefined' && pinfo.notes) ? (' ' + pinfo.notes) : null}
 					</Text>
 				</View>

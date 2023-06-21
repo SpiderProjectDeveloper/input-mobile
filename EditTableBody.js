@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Pressable, View, Text, TextInput, ScrollView } from 'react-native';
+import { Pressable, View, Text, TextInput, ScrollView, ColorPropType } from 'react-native';
 import { EditTableCell } from "./EditTableCell.js";
 import { logHelper } from './helpers.js';
 import { settings } from './settings.js';
@@ -72,8 +72,19 @@ export class EditTableBody extends Component {
 		}
 		this.scrollUp = this.scrollUp.bind(this);
 		this.scrollDown = this.scrollDown.bind(this);
+
+		this._refs = null;
+		this.updateCell = this.updateCell.bind(this);
 	}
 
+	updateCell( row, col, value ) {
+		if( this._refs !== null ) {
+			let key = 'r' + row + 'c' + col;
+			if( key in this._refs ) {
+				this._refs[key].current.setValue( value );
+			}
+		}
+	}
 	
 	componentDidUpdate() {
 		this._scrollAllowed = true;
@@ -123,11 +134,12 @@ export class EditTableBody extends Component {
 	shouldComponentUpdate(nextProps, nextState) {
 		if( nextState.scrollTop !== this.state.scrollTop ) {
 			return true;
-		}
+``		}
 		return false;
 	}
 
 	render() {
+		this._refs = {};
 		let rows=[];
 		for( let irow = this.state.scrollTop ; irow <= this.state.scrollBottom ; irow++ ) {
 			let rowData = this.props.data.array[irow];
@@ -135,8 +147,15 @@ export class EditTableBody extends Component {
 			for( let icol = 0 ; icol < this.props.data.fields.length ; icol++ ) {
 				let f = this.props.data.fields[icol];
 				let value = (typeof(rowData[f.Code]) !== 'undefined' && rowData[f.Code] !== null) ? rowData[f.Code] : null;
+				
+				let ref=null;
+				if( 'editable' in f && f.editable ) {
+					ref = React.createRef();
+					this._refs[ 'r'+irow+'c'+icol ] = ref;
+				}
+
 				rowCells.push( 
-					<EditTableCell key={icol} editTableCellChange={this.props.editTableCellChange}
+					<EditTableCell key={icol} { ...( (ref !== null) ? {ref:ref} : {} ) } editTableCellChange={this.props.editTableCellChange}
 						row={irow} col={icol} value={value} 
 						width={ this.props.widths[icol] } editable={ this.props.editables[icol] } type={ this.props.types[icol] }
 					/>

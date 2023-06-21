@@ -10,18 +10,7 @@ export class EditTableCell extends Component {
     super(props);
 
 		let type = (typeof(this.props.type) !== 'undefined') ? this.props.type : 'text';
-		let value;
-		if( typeof(this.props.value) !== 'undefined' && this.props.value !== null) {
-			if( type === 'number' ) {
-				value = this.props.value.toString();
-			} else if( type === 'datetime' ) {
-				value = formatSpiderDateHelper(this.props.value);
-			} else {
-				value = this.props.value;
-			}
-		} else { 
-			value = '';
-		}
+		let value = this.castValue(this.props.value, type);
 
 		this._originalValue = value;
 		this._updatedValue = value;
@@ -34,10 +23,33 @@ export class EditTableCell extends Component {
 			updated: false
 		};
 
+		this.castValue = this.castValue.bind(this);
+		this.setValue = this.setValue.bind(this);
 		this.onChange = this.onChange.bind(this);
 		this.onBlur = this.onBlur.bind(this);
 		this.onFocus = this.onFocus.bind(this);
   }
+
+	castValue( value, type ) {
+		if( typeof(value) !== 'undefined' && value !== null) {
+			if( type === 'number' ) {
+				value = value.toString();
+			} else if( type === 'datetime' ) {
+				value = formatSpiderDateHelper(value);
+			} else {
+				value = value;
+			}
+		} else { 
+			value = '';
+		}
+		return value;
+	}
+
+	setValue( v ) {
+		let value = this.castValue(v, this.state.type);
+		this._updatedValue = value;
+		this.setState({ value:value, updated:true });
+	}
 
 	onChange( value ) {
 		if( this.props.type === 'number' ) {

@@ -37,6 +37,16 @@ export class EditTable extends Component {
 		this._widths = widths;
 		this._editables = editables;
 		this._types = types;
+
+		this._tableBodyRef = React.createRef();
+		this.updateTableBodyCells = this.updateTableBodyCells.bind(this); 
+	}
+
+	updateTableBodyCells( cells ) {
+		for( let i = 0 ; i < cells.length ; i++ ) {
+			let c = cells[i];
+			this._tableBodyRef.current.updateCell( c.row, c.col, c.value )
+		}
 	}
 	
 	shouldComponentUpdate(nextProps, nextState) {
@@ -48,7 +58,10 @@ export class EditTable extends Component {
 				typeof(this.props.data.array) === 'undefined' || this.props.data.array === null || this.props.data.array.length === 0 ||
 				typeof(this.props.data.fields) === 'undefined' || this.props.data.fields === null || this.props.data.fields.length === 0 )
 		{
-			return (<View><Text>No data...</Text></View>);
+			return(
+				<Text style={{ padding:48, textAlign:'center', alignSelf:'center', alignItems: 'center', justifyContent: 'center'}}>
+					{settings.messages[this.props.lang].emptyTable}
+				</Text>);
 		}
 
 		let headCells = [];
@@ -64,7 +77,8 @@ export class EditTable extends Component {
 				<ScrollView horizontal={true}>
 					<View style={{flexDirection:'column'}}>
 						<View style={{ flexDirection:'row' }}>{headCells}</View>
-						<EditTableBody data={this.props.data} types={this._types} widths={this._widths} editables={this._editables}
+						<EditTableBody ref={this._tableBodyRef}
+							data={this.props.data} types={this._types} widths={this._widths} editables={this._editables}
 							editTableCellChange={this.props.editTableCellChange}/>
 					</View>
 				</ScrollView>

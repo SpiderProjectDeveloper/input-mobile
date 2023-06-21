@@ -32,7 +32,7 @@ export class UpperPrompt extends Component {
 		else if( project === null || !statuses.includes(status) ) {	
 			r = (
 				<View style={styles.upperPromptContainer}>          
-					<Text style={styles.upperPrompt}>{settings.messages[settings.lang][status]}</Text>
+					<Text style={styles.upperPrompt}>{settings.messages[this.props.lang][status]}</Text>
 				</View>
 			);
 		}

@@ -1,9 +1,10 @@
 ﻿import React, { Component } from 'react';
 import { AntDesign } from '@expo/vector-icons'; 
+import { Feather } from '@expo/vector-icons'; 
 import { Dimensions } from 'react-native';
 
 export const settings = {
-		log: false,
+		log: true,
 		window: Dimensions.get('window'),
 		lang: 'en',
 
@@ -26,11 +27,13 @@ export const settings = {
 			},
 		},
 
-    loginButton: <AntDesign name="user" size={20} color="white"/>,		// "log-in"
-    logoutButton: <AntDesign name="logout" size={20} color="white"/>, 	// "log-out"
+    //loginButton: <AntDesign name="log-in" size={20} color="white"/>,		// "user" / "log-in"
+    //logoutButton: <AntDesign name="log-out" size={20} color="white"/>, 	// "logout" / "log-out"
+    loginButton: <Feather name="log-in" size={20} color="white"/>,		// "user" / "log-in"
+    logoutButton: <Feather name="log-out" size={20} color="white"/>, 	// "logout" / "log-out"
     yesButton: <AntDesign name="check" size={20} color="white"/>,
     noButton: <AntDesign name="close" size={20} color="white"/>,
-    backToProjectsButton: <AntDesign name="left" size={20} color="white"/>,	// an alternative icon: "back"
+    backToProjectsButton: <AntDesign name="back" size={20} color="white"/>,	// an alternative icon: "back" / "left"
     saveButton: <AntDesign name="upload" size={20} color="white"/>,	// an alternativr icon: "hdd"
 
 		loadingIcon: <AntDesign name="loading1" size={28} color="black" />,
@@ -100,7 +103,8 @@ export const settings = {
 				dataSaveFailed: 'Failed to save your data',
 				dataBeingUnloaded: 'Please wait...',
 				scrollingData: 'Scrolling...',
-				exitingWithoutSave: 'Your data are not saved and wil be lost. Continue?'				
+				exitingWithoutSave: 'Your data are not saved and wil be lost. Continue?',
+				emptyTable: 'No input data for the chosen date interval!'				
 			},
 			ru: {
 				loginRequired: 'Введите логин и пароль',
@@ -122,7 +126,8 @@ export const settings = {
 				dataSaveFailed: 'Не удалось сохранить данные',
 				dataBeingUnloaded: 'Возврат к списку проектов...',
 				scrollingData: 'Данные подгружаются...',
-				exitingWithoutSave: 'Данные не сохранены и будут потеряны. Ок?'				
+				exitingWithoutSave: 'Данные не сохранены и будут потеряны. Ок?',
+				emptyTable: 'Для выбранного интервала дат данные по учету вводить не требуется!'								
 			}
 		}
 };
