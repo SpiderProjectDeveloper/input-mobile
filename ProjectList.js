@@ -4,7 +4,8 @@ import { logHelper } from './helpers.js';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
 
-export class ProjectList extends Component {
+export class ProjectList extends Component 
+{
 
 	constructor(props) {
 		super(props);
@@ -24,25 +25,33 @@ export class ProjectList extends Component {
 		}
 		let projects = [];
 		let i=0;
-		for( let prj in this.props.list ) {
-			let style = (this.props.chosen !== prj) ? styles.projectListItem : styles.projectListChosenItem;
-			projects.push(
-				<View key={String(i)} style={styles.mainContainerScrollItem}>
-					<Pressable style={styles.projectListItemContainer}
-						onPress={ () => { 
-							if( !this.props.disabled ) {
-								this.props.onPress(prj) 
-							}
-						} }					
-					>
-						{settings.fileIcon}
-						<Text style={style}>{prj}</Text>
-					</Pressable>	
-				</View>
-			);
-			i++;
+		for( let storageKey in this.props.list ) 
+		{
+			for( let fileNameKey in this.props.list[storageKey] ) 
+			{
+				let style = (this.props.chosen !== fileNameKey) ? styles.projectListItem : styles.projectListChosenItem;
+				let title = fileNameKey;
+				if(storageKey !== 'null' ) {
+					title = storageKey + ": " + title;
+				}
+				projects.push(
+					<View key={String(i)} style={styles.mainContainerScrollItem}>
+						<Pressable style={styles.projectListItemContainer}
+							onPress={ () => { 
+								if( !this.props.disabled ) {
+									this.props.onPress(fileNameKey, storageKey) 
+								}
+							} }					
+						>
+							{settings.fileIcon}
+							<Text style={style}>{ title }</Text>
+						</Pressable>	
+					</View>
+				);
+				i++;
+			}
 		}
-		return (
+			return (
 			<ScrollView style={styles.mainContainerScroll}>{projects}</ScrollView>
 		)
 	}

@@ -3,9 +3,10 @@ import { Text, View } from 'react-native';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
 
-export class UpperPrompt extends Component {
-
-	constructor(props) {
+export class UpperPrompt extends Component 
+{
+	constructor(props) 
+	{
 		super(props);
 
 		this.state = {
@@ -13,7 +14,8 @@ export class UpperPrompt extends Component {
 	}
 
 
-	render() {		
+	render() 
+	{		
 		let statuses = [settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
 			settings.statusProjectListLoaded, settings.statusProjectInfoLoaded];
 

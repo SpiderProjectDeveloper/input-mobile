@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
 
 export const settings = {
-		log: true,
+		log: false,
 		window: Dimensions.get('window'),
 		lang: 'en',
 

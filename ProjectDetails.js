@@ -5,9 +5,10 @@ import { logHelper, makeUrlHelper, isValidTimeInSecondsHelper, formatSpiderDateH
 import { settings } from './settings.js';
 import { styles } from './styles.js';
 
-export class ProjectDetails extends Component {
-
-	constructor(props) {
+export class ProjectDetails extends Component 
+{
+	constructor(props) 
+	{
 		super(props);
 
 		this.state = {
@@ -79,7 +80,8 @@ export class ProjectDetails extends Component {
 	}
 
 
-	render() {		
+	render() 
+	{		
 		let pinfo = {...this.state.projectInfo};		
 		if( this._lastProjectRendered !== this.props.project ) {
 			pinfo.versionIndex = null;
@@ -87,8 +89,9 @@ export class ProjectDetails extends Component {
 		this._lastProjectRendered = this.props.project;
 
 		let versions=[];
-		for( let i = 0 ; i < this.props.versions.length ; i++ ) {
-			let v = this.props.versions[i];
+		for( let i = 0 ; i < this.props.versions.length ; i++ ) 
+		{
+			let v = this.props.versions[i].version;
 			versions.push(
 				<Text 								
 					key={String(i*2)}
@@ -96,9 +99,13 @@ export class ProjectDetails extends Component {
 						backgroundColor: settings.activeButtonBgColor, borderRadius:2,
 						color:(!this.props.disabled) ? 'white' : settings.dimColor
 				}}
-					onPress={ () => {
-						if( !this.props.disabled ) { 
-							this.props.onPress(this.props.project, v, this._perfStart, this._perfEnd); 
+					onPress={ () => 
+					{
+						if( !this.props.disabled ) 
+						{ 
+							this.props.onPress(
+								this.props.project, v, this.props.storage, this._perfStart, this._perfEnd
+							); 
 						}
 					}}>{v}
 				</Text>

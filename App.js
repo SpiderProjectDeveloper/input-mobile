@@ -23,6 +23,7 @@ export default class App extends Component {
       },
       projectList: null,
 			projectChosen: null,
+			storageChosen: null,
 			status: settings.statusLoginRequired
     };
 
@@ -60,140 +61,176 @@ export default class App extends Component {
 		this._perfEnd='';
   }
 
-	editTableCellChange( cellValue, cellRow, cellCol ) {
+	editTableCellChange( cellValue, cellRow, cellCol ) 
+	{
 		this.setState( { status: settings.statusDataBeingSaved }, 
 			() => { this.fetchEditTableCellChange( cellValue, cellRow, cellCol ) } );
 	}
 
-	fetchEditTableCellChange( cellValue, cellRow, cellCol ) {
+	fetchEditTableCellChange( cellValue, cellRow, cellCol ) 
+	{
 		let cellCode = this._rawData.fields[cellCol].Code;
-		let toSend = { Code: this._rawData.array[cellRow].Code, Level: this._rawData.array[cellRow].Level };
+		let toSend = { 
+			Code: this._rawData.array[cellRow].Code, Level: this._rawData.array[cellRow].Level 
+		};
 		toSend[ cellCode ] = cellValue;		
-		let req = { command:'setActualPerformance', sessId:this._sessId, docHandle: this._docHandle, 
-			from: this._perfStart, to: this._perfEnd, array: [ toSend ] };
+		let req = { 
+			command:'setActualPerformance', sessId:this._sessId, docHandle: this._docHandle, 
+			from: this._perfStart, to: this._perfEnd, array: [ toSend ] 
+		};
 		logHelper(req);
 
-		fetch( makeUrlHelper(this.state.credentials), { method:'POST', body: JSON.stringify(req) }).
-		then( response => response.json()).
-		then( (d => {
-			logHelper("new values", d);
-			if( ('errcode' in d) && (d.errcode === 0) ) {
-				let cells = [];
-				let newDataArray = d.array; 	// Changes in data array to be made after editing a cell
-				for( let i = 0 ; i < newDataArray.length ; i++ ) {
-					let dataArrayRowCacheKey = makeArrayCacheKeyHelper(newDataArray[i].Level, newDataArray[i].Code);
-					if( dataArrayRowCacheKey in this._dataArrayRowCache) {
-						let row = this._dataArrayRowCache[dataArrayRowCacheKey];
-						for( let fieldKey in newDataArray[i] ) { 	// Iterating through the fields to be changed
-							if( fieldKey === 'Code' || fieldKey === 'Level' ) {		// Skipping if the one is a "Code" or a "Level"
-								continue;
-							}
-							if( fieldKey in this._dataFieldsColCache ) {		// 	
-								let col = this._dataFieldsColCache[fieldKey];
-								let newValue = newDataArray[i][fieldKey];
-								if( this._rawData.array[row][fieldKey] !== newValue ) {
-									cells.push({ row:row, col:col, value: newValue });
-									//delete this._rawData.array[row][code];
-									this._rawData.array[row][fieldKey] = newValue;					
+		fetch( 
+			makeUrlHelper(this.state.credentials), 
+			{ method:'POST', body: JSON.stringify(req) }
+		).then( 
+			response => response.json()
+		).then( 
+			function(d)
+			{
+				logHelper("new values", d);
+				if( ('errcode' in d) && (d.errcode === 0) ) 
+				{
+					let cells = [];
+					let newDataArray = d.array; 	// Changes in data array to be made after editing a cell
+					for( let i = 0 ; i < newDataArray.length ; i++ ) {
+						let dataArrayRowCacheKey = makeArrayCacheKeyHelper(newDataArray[i].Level, newDataArray[i].Code);
+						if( dataArrayRowCacheKey in this._dataArrayRowCache) {
+							let row = this._dataArrayRowCache[dataArrayRowCacheKey];
+							for( let fieldKey in newDataArray[i] ) { 	// Iterating through the fields to be changed
+								if( fieldKey === 'Code' || fieldKey === 'Level' ) {		// Skipping if the one is a "Code" or a "Level"
+									continue;
+								}
+								if( fieldKey in this._dataFieldsColCache ) {		// 	
+									let col = this._dataFieldsColCache[fieldKey];
+									let newValue = newDataArray[i][fieldKey];
+									if( this._rawData.array[row][fieldKey] !== newValue ) {
+										cells.push({ row:row, col:col, value: newValue });
+										//delete this._rawData.array[row][code];
+										this._rawData.array[row][fieldKey] = newValue;					
+									}
 								}
 							}
 						}
 					}
-				}
-				logHelper("cells", cells);
-				this._editTableRef.current.updateTableBodyCells(cells);
-				this.setState({ status: settings.statusDataLoaded });
-			} else {		// If error setting back the old value to the cell changed
-				this._editTableRef.current.updateTableBodyCells( [
+					logHelper("cells", cells);
+					this._editTableRef.current.updateTableBodyCells(cells);
+					this.setState({ status: settings.statusDataLoaded });
+				} else {		// If error setting back the old value to the cell changed
+					this._editTableRef.current.updateTableBodyCells( [
+						{ row:cellRow, col:cellCol, value: this._rawData.array[cellRow][cellCode] }
+					]);
+					this.setState({ status:settings.statusDataSaveFailed });
+				} 
+			}.bind(this) 
+		).catch( 
+			function(e) 
+			{		// If error setting back the old value to the cell changed
+				this._editTableRef.current.updateTableBodyCells([
 					{ row:cellRow, col:cellCol, value: this._rawData.array[cellRow][cellCode] }
 				]);
 				this.setState({ status:settings.statusDataSaveFailed });
-			} 
-		}).bind(this) ).
-		catch( (e) => {		// If error setting back the old value to the cell changed
-			this._editTableRef.current.updateTableBodyCells( [
-				{ row:cellRow, col:cellCol, value: this._rawData.array[cellRow][cellCode] }
-			]);
-			this.setState({ status:settings.statusDataSaveFailed });
-		});
+			}
+		);
 	}
 
-	onProjectChosen(prj) {
-		this.setState( {projectChosen: prj} );
+	onProjectChosen(project, storage) 
+	{
+		this.setState( { projectChosen: project, storageChosen: storage } );
 	}
 
-  onOpenProject( projectName, projectVersion, perfStart, perfEnd ) {
-		if( this.state.status === settings.statusDataBeingLoaded )
-			return;
+  onOpenProject( projectName, projectVersion, storage, perfStart, perfEnd ) 
+	{
+		if( this.state.status === settings.statusDataBeingLoaded ) return;
+
 		let fileName = projectName + "." + projectVersion + ".sprj";
-		this.setState( { status: settings.statusDataBeingLoaded }, function() {
-			fetch( makeUrlHelper(this.state.credentials), {
-					method:'POST',
-					body: JSON.stringify({ command:'openFile', sessId:this._sessId, fileName: fileName})
-			}).
-			then( response => response.json()).
-			then( d => {
-				if( !('errcode' in d) || d.errcode != 0 || !('docHandle' in d) ) {
-					this.setState({ status: settings.statusDataLoadFailed });        
-				} else {
-					this._docHandle = d.docHandle;
-					this.getScheduledPerformance(d, perfStart, perfEnd);
-				}
-			}).
-			catch( (e) => {
-				this.setState({ status: settings.statusDataLoadFailed });				       
-			});
-		});
+		let body = { command:'openFile', sessId:this._sessId, fileName: fileName };
+		if( storage !== null && storage !== 'null' ) body.storageCode = storage;
+
+		this.setState( 
+			{ status: settings.statusDataBeingLoaded }, 
+			function() {
+				fetch( 
+					makeUrlHelper( this.state.credentials ), 
+					{ method:'POST', body: JSON.stringify( body ) }
+				).then( response => response.json()).
+				then( d => {
+					if( !('errcode' in d) || d.errcode != 0 || !('docHandle' in d) ) {
+						this.setState({ status: settings.statusDataLoadFailed });        
+					} else {
+						this._docHandle = d.docHandle;
+						this.getScheduledPerformance(d, perfStart, perfEnd);
+					}
+				}).
+				catch( (e) => {
+					this.setState({ status: settings.statusDataLoadFailed });				       
+				});
+			}
+		);
   }
 
-  getScheduledPerformance( d, perfStart, perfEnd ) {
-		let req = { command:'getScheduledPerformance', sessId:this._sessId, docHandle: this._docHandle, from: perfStart, to: perfEnd };
-    fetch( makeUrlHelper(this.state.credentials), { method:'POST', body: JSON.stringify(req) }).
-    then( response => response.json()).
-    then( (d => {
-			logHelper('getScheduledPerformance', d, "errocode", d.errcode);
-			if( !('errcode' in d) || d.errcode != 0 ) {
-				this.setState({ status:settings.statusDataLoadFailed });
-			} else {
-				this._perfStart = perfStart;
-				this._perfEnd = perfEnd;
-				logHelper('fields:', d.fields);
-				logHelper('array:', d.array);		
-				this._dataFieldsColCache = makeFieldsCacheHelper(d);
-				this._dataArrayRowCache = makeArrayCacheHelper(d);    
-				this._rawData = d;
-				this.setState({ status: settings.statusDataLoaded });
-			}
-    }).bind(this) ).
-    catch( (e) => {
+  getScheduledPerformance( d, perfStart, perfEnd )
+	{
+		let req = { 
+			command:'getScheduledPerformance', sessId:this._sessId, 
+			docHandle: this._docHandle, from: perfStart, to: perfEnd 
+		};
+    fetch( 
+			makeUrlHelper(this.state.credentials), 
+			{ method:'POST', body: JSON.stringify(req) }
+		).then( 
+			response => response.json()
+		).then( 
+			function(d) 
+			{
+				logHelper('getScheduledPerformance', d, "errocode", d.errcode);
+				if( !('errcode' in d) || d.errcode != 0 ) {
+					this.setState({ status:settings.statusDataLoadFailed });
+				} else {
+					this._perfStart = perfStart;
+					this._perfEnd = perfEnd;
+					logHelper('fields:', d.fields);
+					logHelper('array:', d.array);		
+					this._dataFieldsColCache = makeFieldsCacheHelper(d);
+					this._dataArrayRowCache = makeArrayCacheHelper(d);    
+					this._rawData = d;
+					this.setState({ status: settings.statusDataLoaded });
+				}
+	    }.bind(this) 
+		).catch( (e) => {
       this.setState({ status:settings.statusDataLoadFailed });
     });
   }
   
-  loadProjects(d) {
-		if( this.state.status === settings.statusProjectListBeingLoaded )
-			return;
-    this.setState({ status: settings.statusProjectListBeingLoaded }, function() {
-			this._sessId = d.sessId; 
-			fetch( makeUrlHelper(this.state.credentials), 
-				{
-					method: 'POST',
-					body: JSON.stringify({command:'getFiles', sessId:this._sessId, user:this.state.user})
-				}
-			).
-			then( response => response.json()).
-			then( d => {
-				if( !('errcode' in d) || d.errcode != 0 ) {
-					this.setState({ status: settings.statusProjectListRequestFailed });
-				} else {
-					this._grouppedProjectList = groupProjectListHelper(d.array);
-					this.setState({ status: settings.statusProjectListLoaded, projectList:d.array });
-				}
-			}).
-			catch( (e) => {
-				this.setState({status: settings.statusProjectListRequestFailed});
-			});
-		});
+  loadProjects(d) 
+	{
+		if( this.state.status === settings.statusProjectListBeingLoaded ) return;
+
+    this.setState(
+			{ status: settings.statusProjectListBeingLoaded }, 
+			function() 
+			{
+				this._sessId = d.sessId; 
+				fetch( 
+					makeUrlHelper(this.state.credentials), 
+					{
+						method: 'POST',
+						body: JSON.stringify({command:'getFiles', sessId:this._sessId, user:this.state.user})
+					}
+				).then( 
+					response => response.json()
+				).then( d => {
+					if( !('errcode' in d) || d.errcode != 0 ) {
+						this.setState({ status: settings.statusProjectListRequestFailed });
+					} else {
+						this._grouppedProjectList = groupProjectListHelper(d.array);
+						this.setState({ status: settings.statusProjectListLoaded, projectList:d.array });
+					}
+				}).catch( (e) => {
+					this.setState({status: settings.statusProjectListRequestFailed});
+				});
+			}
+		);
   }
     
   onLogin() {
@@ -201,6 +238,7 @@ export default class App extends Component {
     this.setState( { loggedIn:true, status: settings.statusLoggingIn } );
     fetch( makeUrlHelper(this.state.credentials), {
         method: 'POST',
+				mode: "cors", 	// !! Debug only, to be removed...
         body: JSON.stringify({command:'login', 
           user:this.state.credentials.user, password:this.state.credentials.password})
     }).
@@ -334,13 +372,21 @@ export default class App extends Component {
 			let main = (
 				<View style={styles.mainContainer}>
 					<ProjectList list={this._grouppedProjectList} 
-						onPress={this.onProjectChosen} chosen={this.state.projectChosen} disabled={disabled} /> 
+						onPress={this.onProjectChosen} 
+						chosen={this.state.projectChosen} 
+						storageChosen={this.state.storageChosen}
+						disabled={disabled} /> 
 				</View>);
 			let dateStatuses = [settings.statusProjectListBeingLoaded];
       let dates = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
-        (<ProjectDetails lang={this.state.lang} disabled={disabled} project={this.state.projectChosen} 
-					versions={this._grouppedProjectList[this.state.projectChosen]}
-					credentials={this.state.credentials} sessId={this._sessId} 
+        (<ProjectDetails 
+					lang={this.state.lang} 
+					disabled={disabled} 
+					project={this.state.projectChosen} 
+					storage={this.state.storageChosen}
+					versions={this._grouppedProjectList[this.state.storageChosen][this.state.projectChosen]}
+					credentials={this.state.credentials} 
+					sessId={this._sessId} 
 					onPress={this.onOpenProject} />) : null;
       view = (
         <View style={styles.screenContainer}>

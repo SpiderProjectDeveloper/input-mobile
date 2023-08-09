@@ -13,7 +13,8 @@ export function makeUrlHelper( cr ) {
   return 'http://' + cr.server + ':' + cr.port;
 }
 
-export function formatSpiderDateHelper( date, dateOnly=false, format={format:'DMY', dateDelim:'.', timeDelim:':'} ) {
+export function formatSpiderDateHelper( date, dateOnly=false, format={format:'DMY', dateDelim:'.', timeDelim:':'} ) 
+{
   let spiderDateString = null;
   
   if( typeof(date) === 'undefined' || date === null || date === '' ) {
@@ -179,28 +180,54 @@ export function isEmptyStringHelper( s ) {
 }
 
 
-export function groupProjectListHelper( srcList ) {
-	if( typeof(srcList) === 'undefined' || srcList === null ) {
+export function groupProjectListHelper( src ) 
+{
+	if( typeof(src) === 'undefined' || src === null ) {
 		return {};
 	}
 	let re = new RegExp(/^(.*)\.([0-9]+)\.sprj$/, 'i');
-	let dstList = {};
-	for( let i = 0 ; i < srcList.length ; i++ ) {
-		let s = srcList[i];
-		let m = s.match(re);
-		if( m === null || m.length !== 3 ) {
-			continue;
+	let dest = {};
+	for( let entry of src ) 
+	{
+		let key = null, version = null, storage=null;
+		if( typeof(entry) === 'object' ) 
+		{
+			if( entry.storageCode === undefined || entry.fileName === undefined ) continue;
+			let m = entry.fileName.match(re);
+			if( m === null || m.length !== 3 ) continue;
+			key = m[1];
+			version = m[2];
+			storage = entry.storageCode;
+		} else if( typeof(entry) === 'string' )
+		{
+			let m = entry.match(re);
+			if( m === null || m.length !== 3 ) continue;
+			key = m[1];
+			version = m[2];
+			storage = null;
 		}
-		let key = m[1];
-		if( !(key in dstList) ) {
-			dstList[ key ] = [];
+		if( key === null || version === null ) continue;
+		
+		if( !(storage in dest) ) {
+			dest[storage] = {};
 		}
-		dstList[ key ].push(m[2]);
+		if( !(key in dest[storage]) ) {
+			dest[storage][ key ] = [];
+		}
+		dest[storage][ key ].push( { version: version, storage: storage } );
 	}	
-	for( let key in dstList ) {
-		dstList[ key ].reverse();
+
+	for( let storageKey in dest ) 
+	{
+		for( let fileNameKey in dest[storageKey] ) 
+		{
+			dest[ storageKey ][fileNameKey].sort( (a, b) => {
+				let v1 = parseInt( a.version ), v2 = parseInt( b.version );
+				return ( isNaN(v1) || isNaN(v2) ) ? 0 : v1 - v2; 
+			} );
+		}
 	}	
-	return dstList;
+	return dest;
 }
 
 export function makeFieldsCacheHelper( data ) {
