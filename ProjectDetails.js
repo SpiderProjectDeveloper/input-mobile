@@ -78,9 +78,9 @@ export class ProjectDetails extends Component
 					} else {
 						if( isValidTimeInSecondsHelper(d.project.CurTime) ) {
 							this._perfStart = formatSpiderDateHelper( parseInt(d.project.CurTime), true  );
-							let addDays = (this.props.parameters.performanceFromCurTime === 'yes') ? this.props.performanceDays : null;
-							let days = (addDays) ? addDays : 60*60*24*7;
-							this._perfEnd = formatSpiderDateHelper( parseInt(d.project.CurTime) + days, true );			
+							let addDays = (this.props.parameters.performanceFromCurTime === 'yes') ? this.props.parameters.performanceDays : null;
+							let days = (addDays) ? addDays : 7;
+							this._perfEnd = formatSpiderDateHelper( parseInt(d.project.CurTime) + 60*60*24*days, true );			
 						} else {
 							this._perfStart = '';
 							this._perfEnd = '';	
