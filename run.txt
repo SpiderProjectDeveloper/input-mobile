@@ -1,0 +1,6 @@
+﻿Build:
+npx cross-env EAS_NO_VCS=1 eas build
+npx cross-env EAS_NO_VCS=1 eas build --profile production --platform android
+
+Development:
+npx expo start

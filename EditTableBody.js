@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import { Pressable, View, Text, TextInput, ScrollView, ColorPropType } from 'react-native';
 import { EditTableCell } from "./EditTableCell.js";
-import { logHelper } from './helpers.js';
+import { decodeSPColorToHtml } from './helpers.js';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
 
-class ScrollVisualHelper extends Component {
+class ScrollVisualHelper extends Component 
+{
 	constructor(props) {
 		super(props);
 
@@ -28,13 +29,18 @@ class ScrollVisualHelper extends Component {
 		return true;
 	}
 
-	render() {
+	render() 
+	{
 		this._visible = this.props.visible;
 		if( !this.props.visible ) {
 			return null;
 		}
 		let scrollCells=[];
-		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) {				
+		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) 
+		{				
+			let f = this.props.data.fields[i];
+			if( 'hidden' in f && f.hidden === 1 ) continue;
+			
 			scrollCells.push(
 				<Pressable key={i} onPress={this.onPress}>          
 					<Text key={i}  
@@ -54,9 +60,10 @@ class ScrollVisualHelper extends Component {
 };
 
 
-export class EditTableBody extends Component {
-
-	constructor(props) {
+export class EditTableBody extends Component 
+{
+	constructor(props) 
+	{
 		super(props);
 
 		this._scrollSize = 12; 
@@ -77,7 +84,8 @@ export class EditTableBody extends Component {
 		this.updateCell = this.updateCell.bind(this);
 	}
 
-	updateCell( row, col, value ) {
+	updateCell( row, col, value ) 
+	{
 		if( this._refs !== null ) {
 			let key = 'r' + row + 'c' + col;
 			if( key in this._refs ) {
@@ -105,7 +113,8 @@ export class EditTableBody extends Component {
 		}
   }
 
-	scrollUp() {
+	scrollUp() 
+	{
 		if( !this._scrollAllowed || !(this.state.scrollTop > 0) ) {
 			return;
 		}
@@ -117,7 +126,8 @@ export class EditTableBody extends Component {
 		this.setState({ scrollTop: newTop, scrollBottom: (newTop + settings.editTableInitialLoad - 1) });
 	}
 
-	scrollDown() {
+	scrollDown() 
+	{
 		if( !this._scrollAllowed || !(this.state.scrollBottom < this._scrollMax) ) {
 			return;
 		}
@@ -131,22 +141,39 @@ export class EditTableBody extends Component {
 		}
 	}
 
-	shouldComponentUpdate(nextProps, nextState) {
-		if( nextState.scrollTop !== this.state.scrollTop ) {
-			return true;
-``		}
-		return false;
+	shouldComponentUpdate(nextProps, nextState) 
+	{
+		return ( nextState.scrollTop !== this.state.scrollTop || nextProps.showAssignments != this.props.showAssignments );
 	}
 
-	render() {
+	render() 
+	{
 		this._refs = {};
 		let rows=[];
-		for( let irow = this.state.scrollTop ; irow <= this.state.scrollBottom ; irow++ ) {
+		for( let irow = this.state.scrollTop ; irow <= this.state.scrollBottom ; irow++ ) 
+		{
 			let rowData = this.props.data.array[irow];
+			if( !this.props.showAssignments ) if( rowData.Level === 'A' ) continue;
+
+			let bgColor = decodeSPColorToHtml( rowData['f_ColorBack'], "#ffffff" );
+
 			let rowCells=[];
-			for( let icol = 0 ; icol < this.props.data.fields.length ; icol++ ) {
+			for( let icol = 0 ; icol < this.props.data.fields.length ; icol++ ) 
+			{				
 				let f = this.props.data.fields[icol];
-				let value = (typeof(rowData[f.Code]) !== 'undefined' && rowData[f.Code] !== null) ? rowData[f.Code] : null;
+				if( 'hidden' in f && f.hidden === 1 ) continue;
+
+				let toFixed = 2; // this.props.data.fields['toFixed']
+				let value;
+				if( f.Code === '__lineNumber__' ) {
+					value = irow;
+				} else {
+					if( typeof(rowData[f.Code]) !== 'undefined' && rowData[f.Code] !== null ) {
+						value = rowData[f.Code];
+					} else {
+						value = null;
+					}
+				}
 				
 				let ref=null;
 				if( 'editable' in f && f.editable ) {
@@ -155,9 +182,15 @@ export class EditTableBody extends Component {
 				}
 
 				rowCells.push( 
-					<EditTableCell key={icol} { ...( (ref !== null) ? {ref:ref} : {} ) } editTableCellChange={this.props.editTableCellChange}
-						row={irow} col={icol} value={value} 
-						width={ this.props.widths[icol] } editable={ this.props.editables[icol] } type={ this.props.types[icol] }
+					<EditTableCell 
+						key= { icol } { ...( (ref !== null) ? {ref:ref} : {} ) } 
+						editTableCellChange= { this.props.editTableCellChange }
+						row = { irow } col = { icol } value = { value } 
+						width = { this.props.widths[icol] } 
+						editable = { this.props.editables[icol] } 
+						type = { this.props.types[icol] }
+						bgColor = { bgColor }
+						toFixed= { toFixed }
 					/>
 				);
 			}

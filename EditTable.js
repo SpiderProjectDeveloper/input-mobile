@@ -1,21 +1,33 @@
 import React, { Component } from 'react';
 import { TouchableOpacity, StyleSheet, View, Text, TextInput, ScrollView } from 'react-native';
 import { EditTableCell } from "./EditTableCell.js";
+import { EditTableHeadCell } from "./EditTableHeadCell.js";
 import { EditTableBody } from './EditTableBody.js';
 import { logHelper } from './helpers.js';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
 
-export class EditTable extends Component {
-
-	constructor(props) {
+export class EditTable extends Component 
+{
+	constructor(props) 
+	{
 		super(props);
+
+		let showAssignments = this.props.data.performanceInputSettings.f_PerformanceShowAssignments;
+		showAssignments = (showAssignments === 'no') ? false : true;
+
+		this.state = {
+			showAssignments: showAssignments
+		};
 
 		let widths=[];
 		let types=[];
 		let editables=[];
-		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) {
+		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) 
+		{
 			let f = this.props.data.fields[i];
+			if( 'hidden' in f && f.hidden === 1 ) continue;
+
 			let w = settings.defaultCellWidth;
 			if( typeof(f.Type) === 'string' ) {
 				if( f.Type === 'datetime' ) {
@@ -24,7 +36,9 @@ export class EditTable extends Component {
 					w = settings.tableCellFontSize*8;
 				} else if( f .Type === 'text' ) {
 					w = settings.tableCellFontSize*8;
-				} 
+				} else if( f.Type === 'lineNumber' ) {
+					w = settings.tableCellFontSize*3;
+				}
 			}
 			widths.push(w);
 			
@@ -40,20 +54,31 @@ export class EditTable extends Component {
 
 		this._tableBodyRef = React.createRef();
 		this.updateTableBodyCells = this.updateTableBodyCells.bind(this); 
+		
+		this.updateShowAssignments = this.updateShowAssignments.bind(this);
 	}
 
-	updateTableBodyCells( cells ) {
-		for( let i = 0 ; i < cells.length ; i++ ) {
+	updateShowAssignments( value ) 
+	{
+		console.log('updateShowAssignments' + value);
+		this.setState( { showAssignments: value } );
+	}
+
+	updateTableBodyCells( cells ) 
+	{
+		for( let i = 0 ; i < cells.length ; i++ ) 
+		{
 			let c = cells[i];
-			this._tableBodyRef.current.updateCell( c.row, c.col, c.value )
+			this._tableBodyRef.current.updateCell( c.row, c.col, c.value );
 		}
 	}
 	
-	shouldComponentUpdate(nextProps, nextState) {
-		return false;
-	}
+	//shouldComponentUpdate(nextProps, nextState) {
+	//	return false;
+	//}
 
-	render() {
+	render() 
+	{
 		if( typeof(this.props.data) === 'undefined' || this.props.data === null || 
 				typeof(this.props.data.array) === 'undefined' || this.props.data.array === null || this.props.data.array.length === 0 ||
 				typeof(this.props.data.fields) === 'undefined' || this.props.data.fields === null || this.props.data.fields.length === 0 )
@@ -65,11 +90,23 @@ export class EditTable extends Component {
 		}
 
 		let headCells = [];
-		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) {
+		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) 
+		{
 			let f = this.props.data.fields[i];
+			if( 'hidden' in f && f.hidden === 1 ) continue;
+
 			let w = this._widths[i]
+			if( f.Type == 'lineNumber' ) {
+				headCells.push(
+					<EditTableHeadCell key={i} col={i} width={ w } value = {f.Name} 
+						onShowAssignments = {this.updateShowAssignments} 
+						showAssignments = {this.state.showAssignments}
+					/>
+				);
+				continue;
+			}
 			headCells.push(
-				<EditTableCell key={i} col={i} width={ w } value = {f.Name} editable = {false} />
+				<EditTableHeadCell key={i} col={i} width={ w } value = {f.Name} />
 			);
 		}
 
@@ -78,8 +115,10 @@ export class EditTable extends Component {
 					<View style={{flexDirection:'column'}}>
 						<View style={{ flexDirection:'row' }}>{headCells}</View>
 						<EditTableBody ref={this._tableBodyRef}
-							data={this.props.data} types={this._types} widths={this._widths} editables={this._editables}
-							editTableCellChange={this.props.editTableCellChange}/>
+							data={this.props.data} types={this._types} 
+							widths={this._widths} editables={this._editables}
+							editTableCellChange={this.props.editTableCellChange}
+							showAssignments={this.state.showAssignments} />
 					</View>
 				</ScrollView>
 		);

@@ -169,7 +169,12 @@ export function isValidTimeInSecondsHelper( value ) {
 }
 
 
-export function isEmptyStringHelper( s ) {
+export function isEmptyStringHelper( s ) 
+{
+	if( s === undefined || s === null ) return true;
+
+	if( typeof(s) !== 'string' ) s = s.toString();		
+
 	for( let i = 0 ; i < s.length ; i++ ) {
 		let c = s[i];
 		if( c !== ' ' && c !== '\t' && c !== '\r' && c !== '\n' ) {
@@ -253,4 +258,145 @@ export function makeArrayCacheHelper( data ) {
 		dataCache[key] = i;
 	}	
 	return dataCache;
+}
+
+
+export function formatDisplayNumberHelper( value, toFixed )
+{
+	if( value === 'undefined' || value === null ) return [ '', null ];
+
+	if( toFixed === undefined || toFixed === null ) toFixed = 2;
+
+	let typeOfValue = typeof(value);
+	if( typeOfValue !== 'number') 
+	{
+		if( typeOfValue === 'string' ) 
+		{
+			if( value === '' ) return [ '', null ];
+			let floatValue = parseFloat( value );
+			if( isNaN( floatValue ) ) return [ value, null ];
+			let splitted = value.split('.');
+			let count = ( splitted.length === 2 ) ? splitted[1].length : 0;
+			return [ floatValue.toFixed( toFixed ), count ];
+		}
+		return [ value, null ];
+	}
+
+	return [ value.toFixed( toFixed ), countDecimalDigits( value ) ];
+}
+
+export function countDecimalDigits( value )
+{
+	if( value === null || value === undefined || isNaN(value) ) return null;
+	if( typeof(value) === 'string' ) {
+		value = parseFloat(value);
+		if( isNaN(value) ) return null;
+	} 	
+	value = Math.abs(value);
+	value = value - Math.round(value);
+	let count = 0;
+	while( value > 0 ) {
+		value = value * 10;
+		value = value - Math.round(value);
+		count++;
+	}
+
+	return count;
+}
+
+
+export function isDifferentNumbersHelper( n1, n2 )
+{
+	if( (n1 === null || n1 === undefined) && (n2 !== null && n2 !== undefined) ) return true;
+	if( (n2 === null || n2 === undefined) && (n1 !== null && n1 !== undefined) ) return true;
+	if( (n1 === null || n1 === undefined) && (n1 === null || n2 === undefined) ) return false;
+
+	if( typeof(n1) === 'string' ) n1 = parseFloat(n1);
+	if( typeof(n2) === 'string' ) n2 = parseFloat(n2);
+
+	if( (isNaN(n1) && !isNaN(n2)) || (!isNaN(n1) && isNaN(n2)) ) return true;
+	if( isNaN(n1) && isNaN(n2) ) return false;
+
+	return ( Math.abs(n1 - n2) > 1e-10 );
+}
+
+export function splitText( text, breakIf=14 ) 
+{
+	if( text.length < breakIf ) return text;
+	let insertBreak = ( text, pos ) => {
+		return text.substr(0, pos) + '\n' + text.substr(pos+1, text.length - pos - 1);
+	};
+
+	let mid = Math.floor(text.length/2);
+	for( let i=0 ; (mid+i) < text.length - 2  && mid-i >= 2 ; i++ )
+	{
+		if( text[mid+i] === ' ' ) {
+			text = insertBreak( text, mid+i ); 
+			break;
+		}
+		if( text[mid-i] === ' ' ) {
+			text = insertBreak( text, mid-i ); 
+			break;
+		}
+	}
+	return text;
+}
+
+
+export function readDictValue( dict, key, type )
+{
+	if( dict === undefined || dict === null ) return null;
+	if( !( key in dict ) ) return null;
+	if( dict[key] === null ) return null;
+	if( typeof(dict[key]) !== type ) return null;
+	return dict[key];
+}
+
+
+function digitsOnly( str ) 
+{
+	let l = str.length;
+	if( l == 0 ) return false;
+	
+	for( let i = 0 ; i < l ; i++ ) 
+	{
+		if( str[i] === ' ' ) continue;
+		if( (str[i] < '0' || str[i] > '9') ) return false;
+	}
+	return true;
+}
+
+
+export function decodeSPColorToHtml( decColor, defaultColor=null ) 
+{
+	if( typeof(decColor) !== 'undefined' && decColor !== '' && decColor !== null ) 
+	{		
+		if( decColor ) 
+		{
+			if( digitsOnly(decColor) ) 
+			{
+				decColor = Number(decColor);
+				if( decColor > 0xFFFFFF ) {
+					return defaultColor;
+				}
+				let c1 = (decColor & 0xFF0000) >> 16;
+				let c1text = c1.toString(16);
+				if( c1text.length == 1 ) {
+					c1text = "0" + c1text;
+				}
+				let c2 = (decColor & 0x00FF00) >> 8;
+				let c2text = c2.toString(16);
+				if( c2text.length == 1 ) {
+					c2text = "0" + c2text;
+				}
+				let c3 = (decColor & 0x0000FF);	  
+				let c3text = c3.toString(16);
+				if( c3text.length == 1 ) {
+					c3text = "0" + c3text;
+				}
+				return '#' + c3text + c2text + c1text;
+			}
+		}
+	}
+	return defaultColor;
 }

@@ -4,11 +4,11 @@ import { Feather } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
 
 export const settings = {
-		log: false,
+		log: true,
 		window: Dimensions.get('window'),
 		lang: 'en',
 
-		editTableInitialLoad: 24,
+		editTableInitialLoad: 40,
 
 		texts: {
 			en: {
@@ -82,6 +82,8 @@ export const settings = {
 		statusScrollingData: 'scrollingData',
     statusExitingWithoutSave: 'exitingWithoutSave',
 
+		promptTapToRequestProjectInfo: 'tapToRequestProjectInfo',
+
 		messages: {
 			en: {
 				loginRequired: 'Please log in',
@@ -104,7 +106,8 @@ export const settings = {
 				dataBeingUnloaded: 'Please wait...',
 				scrollingData: 'Scrolling...',
 				exitingWithoutSave: 'Your data are not saved and wil be lost. Continue?',
-				emptyTable: 'No input data for the chosen date interval!'				
+				emptyTable: 'No input data for the chosen date interval!',
+				tapToRequestProjectInfo: 'Tap ' + String.fromCharCode(0x24D8) + ' to request project info'
 			},
 			ru: {
 				loginRequired: 'Введите логин и пароль',
@@ -127,7 +130,8 @@ export const settings = {
 				dataBeingUnloaded: 'Возврат к списку проектов...',
 				scrollingData: 'Данные подгружаются...',
 				exitingWithoutSave: 'Данные не сохранены и будут потеряны. Ок?',
-				emptyTable: 'Для выбранного интервала дат данные по учету вводить не требуется!'								
+				emptyTable: 'Для выбранного интервала дат данные по учету вводить не требуется!',								
+				tapToRequestProjectInfo: 'Нажмите ' + String.fromCharCode(0x24D8) + ' чтобы запросить информацию по проекту'
 			}
 		}
 };

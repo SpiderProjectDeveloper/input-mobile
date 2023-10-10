@@ -9,11 +9,13 @@ import { UpperPrompt } from './UpperPrompt.js';
 import { readStorage, writeStorage } from './storage.js';
 import { logHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper, 
 	makeFieldsCacheHelper, makeArrayCacheKeyHelper, makeArrayCacheHelper } from './helpers.js';
-import {styles} from './styles.js';
-import {settings} from './settings.js';
+import {styles, screenHeight, upperHeight, projectDetailsHeight } from './styles.js';
+import { settings } from './settings.js';
 
-export default class App extends Component {  
-  constructor(props) {
+export default class App extends Component 
+{  
+  constructor(props) 
+	{
     super(props);
 
     this.state = {
@@ -21,6 +23,7 @@ export default class App extends Component {
       credentials: {
         server: 'localhost', port: '8080', user: 'user', password: 'user'
       },
+			parameters: null,
       projectList: null,
 			projectChosen: null,
 			storageChosen: null,
@@ -88,11 +91,12 @@ export default class App extends Component {
 		).then( 
 			function(d)
 			{
-				logHelper("new values", d);
+				logHelper("new values");
+				logHelper(d);
 				if( ('errcode' in d) && (d.errcode === 0) ) 
 				{
 					let cells = [];
-					let newDataArray = d.array; 	// Changes in data array to be made after editing a cell
+					let newDataArray = ('array' in d && d.array !== null) ? d.array : []; 	// Changes in data array to be made after editing a cell
 					for( let i = 0 ; i < newDataArray.length ; i++ ) {
 						let dataArrayRowCacheKey = makeArrayCacheKeyHelper(newDataArray[i].Level, newDataArray[i].Code);
 						if( dataArrayRowCacheKey in this._dataArrayRowCache) {
@@ -130,7 +134,7 @@ export default class App extends Component {
 					{ row:cellRow, col:cellCol, value: this._rawData.array[cellRow][cellCode] }
 				]);
 				this.setState({ status:settings.statusDataSaveFailed });
-			}
+			}.bind(this)
 		);
 	}
 
@@ -191,6 +195,10 @@ export default class App extends Component {
 					this._perfEnd = perfEnd;
 					logHelper('fields:', d.fields);
 					logHelper('array:', d.array);		
+					// Adding an extra column with line numbers
+					d.fields.splice( 0, 0, { "Code" : "__lineNumber__", "Name" : "N", "Type" : "lineNumber",
+							"editable" : 0, "hidden" : 0, "format" : 0, "widthsym" : 1
+					});
 					this._dataFieldsColCache = makeFieldsCacheHelper(d);
 					this._dataArrayRowCache = makeArrayCacheHelper(d);    
 					this._rawData = d;
@@ -233,7 +241,8 @@ export default class App extends Component {
 		);
   }
     
-  onLogin() {
+  onLogin() 
+	{
     // To login here...
     this.setState( { loggedIn:true, status: settings.statusLoggingIn } );
     fetch( makeUrlHelper(this.state.credentials), {
@@ -242,7 +251,7 @@ export default class App extends Component {
         body: JSON.stringify({command:'login', 
           user:this.state.credentials.user, password:this.state.credentials.password})
     }).
-    then( response => response.json()).
+    then( response => response.json() ).
     then( d => {
       if( !('errcode' in d) ) {
         this.setState({ status: settings.statusLoginRequestFailed });
@@ -250,6 +259,7 @@ export default class App extends Component {
       if( d.errcode != 0 ) {
         this.setState({ status: settings.statusLoginFailed });
       } else {
+				this.setState( { parameters: d.parameters } )
         this.loadProjects(d);
       }  
     }).
@@ -258,7 +268,8 @@ export default class App extends Component {
     });
   }
 
-  onLogout() {
+  onLogout() 
+	{
     this.setState( { status: settings.statusLoggingOut } );
     fetch( makeUrlHelper(this.state.credentials), 
       {
@@ -276,7 +287,8 @@ export default class App extends Component {
     this.setState( { status: settings.statusLoginRequired } );
   }
 
-  closeProject() {
+  closeProject() 
+	{
 		if( this.state.status === settings.statusDataBeingUnloaded )
 			return;
     this.setState( { status: settings.statusDataBeingUnloaded }, function() {
@@ -297,7 +309,8 @@ export default class App extends Component {
   }
 
 
-  render() {
+  render() 
+	{
     let loginViewStatuses = [ settings.statusLoginRequired, settings.statusLoginFailed, 
       settings.statusLoginRequestFailed, settings.statusLoggingIn ];
     let listViewStatuses = [ settings.statusProjectListBeingLoaded, settings.statusProjectListRequestFailed, 
@@ -357,7 +370,8 @@ export default class App extends Component {
           </View>
         </View>
       );
-    } else if( listViewStatuses.includes(this.state.status ) ) {
+    } else if( listViewStatuses.includes(this.state.status ) ) 
+		{
       // LIST OF PROJECTS
       let upperView = (
         <View style={styles.upperContainer}>
@@ -370,18 +384,21 @@ export default class App extends Component {
       );
 			let disabled = (this.state.status === settings.statusDataBeingLoaded);
 			let main = (
-				<View style={styles.mainContainer}>
+				//<View style={styles.mainContainer}>
 					<ProjectList list={this._grouppedProjectList} 
+						height={ (screenHeight - upperHeight - projectDetailsHeight) }
 						onPress={this.onProjectChosen} 
 						chosen={this.state.projectChosen} 
 						storageChosen={this.state.storageChosen}
 						disabled={disabled} /> 
-				</View>);
+				//</View>
+			);
 			let dateStatuses = [settings.statusProjectListBeingLoaded];
-      let dates = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
+      let projectDetails = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
         (<ProjectDetails 
 					lang={this.state.lang} 
 					disabled={disabled} 
+					parameters={this.state.parameters}
 					project={this.state.projectChosen} 
 					storage={this.state.storageChosen}
 					versions={this._grouppedProjectList[this.state.storageChosen][this.state.projectChosen]}
@@ -391,7 +408,7 @@ export default class App extends Component {
       view = (
         <View style={styles.screenContainer}>
           {upperView}
-          {dates}
+          {projectDetails}
           {main}
         </View>
       );  

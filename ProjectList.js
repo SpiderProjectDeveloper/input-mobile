@@ -18,9 +18,9 @@ export class ProjectList extends Component
 	render() {		
 		if( typeof(this.props.list) === 'undefined' || this.props.list === null || this.props.list.legnth === 0 ) {
 			return(
-				<>
+				<View style={styles.mainContainer}>
 					{settings.loadingIcon}
-				</>
+				</View>
 			);
 		}
 		let projects = [];
@@ -52,7 +52,10 @@ export class ProjectList extends Component
 			}
 		}
 			return (
-			<ScrollView style={styles.mainContainerScroll}>{projects}</ScrollView>
-		)
+				//<ScrollView style={styles.mainContainerScroll}>{projects}</ScrollView>
+				<ScrollView style={ [ styles.mainContainerScroll, { height: this.props.height } ] }>
+					{projects}
+				</ScrollView>
+			)
 	}
 }
