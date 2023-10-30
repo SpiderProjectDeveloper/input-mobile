@@ -2,21 +2,20 @@
 import {Dimensions} from 'react-native';
 import {settings} from './settings.js';
 
-export const upperHeight = 60;
+export const headerHeight = 60;
 export const projectDetailsHeight = 120;
 
-export const screenWidth = Dimensions.get('window').width;
-export const screenHeight = Dimensions.get('window').height;
+var screenWidth = Dimensions.get('window').width;
+var screenHeight = Dimensions.get('window').height;
 
 export const styles = StyleSheet.create({
     screenContainer: {
       flex:1, flexDirection:'column', 
-			width: screenWidth, height: screenHeight, 
 			backgroundColor: settings.screenBgColor,     
     },
     upperContainer: {
       // flex:1, flexGrow: 1, 
-			height: upperHeight,
+			height: headerHeight,
 			flexDirection:'row', width:'100%' 
     },
     upperPromptContainer: {
@@ -30,7 +29,7 @@ export const styles = StyleSheet.create({
     },
     upperButtonContainer: {
       //flex:1, alignContent:'flex-end', 
-			width: 60, height: upperHeight,
+			width: 60, height: headerHeight,
 			alignItems: 'center', justifyContent: 'center', 
       backgroundColor:settings.activeButtonBgColor    
     },
@@ -40,7 +39,6 @@ export const styles = StyleSheet.create({
     mainContainer: {			
       //flex:8, flexGrow: 8, 
 			overflow:'scroll', flexDirection:'column', 
-			height: screenHeight - upperHeight, 
 			alignItems: 'center', justifyContent: 'center', 
       backgroundColor: settings.screenBgColor
     },
@@ -50,8 +48,7 @@ export const styles = StyleSheet.create({
     mainContainerScroll: {
       //flex: 6, flexGrow: 8, 
 			flexDirection:'column', 
-			height: screenHeight - upperHeight, 
-			width:'100%', backgroundColor: settings.screenBgColor
+			backgroundColor: settings.screenBgColor
     },
     mainContainerScrollItem: {
         flexDirection: 'row', width:'100%', margin: 2, padding: 4, 

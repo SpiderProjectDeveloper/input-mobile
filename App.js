@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { Component } from 'react';
+import {Dimensions} from 'react-native';
 import { Text, TextInput, View, ScrollView, Touchable, TouchableOpacity, Pressable } from 'react-native';
 import { EditTable } from './EditTable.js';
 import { ProjectList } from './ProjectList.js';
@@ -9,7 +10,7 @@ import { UpperPrompt } from './UpperPrompt.js';
 import { readStorage, writeStorage } from './storage.js';
 import { logHelper, makeUrlHelper, formatSpiderDateHelper, groupProjectListHelper, 
 	makeFieldsCacheHelper, makeArrayCacheKeyHelper, makeArrayCacheHelper } from './helpers.js';
-import {styles, screenHeight, upperHeight, projectDetailsHeight } from './styles.js';
+import {styles, screenHeight, headerHeight, projectDetailsHeight } from './styles.js';
 import { settings } from './settings.js';
 
 export default class App extends Component 
@@ -27,7 +28,9 @@ export default class App extends Component
       projectList: null,
 			projectChosen: null,
 			storageChosen: null,
-			status: settings.statusLoginRequired
+			status: settings.statusLoginRequired,
+			screenWidth: Dimensions.get('window').width,
+			screenHeight: Dimensions.get('window').height
     };
 
 		this._rawData = null; 
@@ -62,6 +65,10 @@ export default class App extends Component
 
 		this._perfStart='';
 		this._perfEnd='';
+
+		Dimensions.addEventListener('change', ({ window, screen }) => {
+      this.setState( { screenWidth: screen.width, screenHeight: screen.height  } )
+    });
   }
 
 	editTableCellChange( cellValue, cellRow, cellCol ) 
@@ -320,7 +327,7 @@ export default class App extends Component
     if( loginViewStatuses.includes( this.state.status ) ) {
       // LOGIN VIEW
       view = (
-        <View style={styles.screenContainer}>
+        <View style={ [ styles.screenContainer, { width: this.state.screenWidth, height:this.state.screenHeight} ] }>
           <View style={styles.upperContainer}>
 						{
 						(this.state.status !== settings.statusLoggingIn) ? 
@@ -338,7 +345,13 @@ export default class App extends Component
 							(<UpperButton onPress={this.onLogin} text={settings.loginButton} />) : null //(<Pressable onPress={this.onLogin} style={styles.upperButtonContainer}><Text title={'Login'} style={styles.upperButton}>{settings.loginButton}</Text></Pressable>) : null 
 						}
           </View>
-          <View style={styles.mainContainer}>
+					<ScrollView 
+						style={ [ 
+							styles.mainContainerScroll, 
+							{ width: this.state.screenWidth, height: this.state.screenHeight - headerHeight } 
+						] }
+						contentContainerStyle={{ flexGrow: 1, alignItems: 'center' } }
+					>
             <Text style={styles.loginPageSubHeader}>{settings.texts[this.state.lang].server}</Text>
             <TextInput value={this.state.credentials.server} style={styles.input} placeholder={settings.serverText} 
               onChangeText={ (server) => { 
@@ -367,7 +380,7 @@ export default class App extends Component
 								writeStorage( 'password', password ); 
 							} 
 							}/>
-          </View>
+          </ScrollView>
         </View>
       );
     } else if( listViewStatuses.includes(this.state.status ) ) 
@@ -384,14 +397,13 @@ export default class App extends Component
       );
 			let disabled = (this.state.status === settings.statusDataBeingLoaded);
 			let main = (
-				//<View style={styles.mainContainer}>
 					<ProjectList list={this._grouppedProjectList} 
-						height={ (screenHeight - upperHeight - projectDetailsHeight) }
+						width = { this.state.screenWidth }
+						height={ (this.state.screenHeight - headerHeight - projectDetailsHeight) }
 						onPress={this.onProjectChosen} 
 						chosen={this.state.projectChosen} 
 						storageChosen={this.state.storageChosen}
 						disabled={disabled} /> 
-				//</View>
 			);
 			let dateStatuses = [settings.statusProjectListBeingLoaded];
       let projectDetails = ( !dateStatuses.includes(this.state.status) && this.state.projectChosen !== null ) ?
@@ -406,7 +418,7 @@ export default class App extends Component
 					sessId={this._sessId} 
 					onPress={this.onOpenProject} />) : null;
       view = (
-        <View style={styles.screenContainer}>
+        <View style={ [ styles.screenContainer, {width: this.state.screenWidth, height: this.state.screenHeight } ] }>
           {upperView}
           {projectDetails}
           {main}
@@ -417,13 +429,21 @@ export default class App extends Component
       let editTableView;
       if(this._rawData !== null /*&& this.state.status !== settings.statusDataBeingUnloaded*/ ) {
         editTableView = (
-					<View style= {[ styles.mainContainer, { alignItems: 'flex-start', justifyContent: 'flex-start'} ]}>
+					<View style= {
+						[ 
+							styles.mainContainer, 
+							{ alignItems: 'flex-start', justifyContent: 'flex-start', 
+								width: this.state.screenWidth, height: this.state.screenHeight - headerHeight } 
+						]
+					}>
 						<EditTable ref={this._editTableRef} lang={this.state.lang} 
 							data={this._rawData} editTableCellChange={this.editTableCellChange}/>
 					</View>
 				)
       } else {
-        editTableView = <View style={styles.mainContainer}>{settings.loadingIcon}</View>
+        editTableView = <View style={ [ styles.mainContainer, {width: this.state.screenWidth, height: this.state.screenHeight - headerHeight } ] }>
+					{settings.loadingIcon}
+				</View>
       }
       let upperView = (
 				<View style={styles.upperContainer}>
@@ -436,7 +456,7 @@ export default class App extends Component
 			);
       
       view = (
-        <View style={styles.screenContainer}>
+        <View style={ [ styles.screenContainer, {width: this.state.screenWidth, height: this.state.screenHeight } ] }>
           {upperView}
           {editTableView}
         </View>
