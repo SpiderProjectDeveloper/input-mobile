@@ -1,4 +1,3 @@
-apk/*
 node_modules/**/*
 .expo/*
 npm-debug.*

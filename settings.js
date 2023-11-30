@@ -50,7 +50,7 @@ export const settings = {
 
     screenBgColor: '#ffffff',
     screenBgColor2: '#f0f0f0',
-    activeButtonBgColor: '#449999',
+    activeButtonBgColor: '#1b73b3',
     inactiveButtonBgColor: '#d0e0e0',
 		dimColor: '#afafaf',
 		textColor: '#5f5f5f',
@@ -87,7 +87,7 @@ export const settings = {
 		messages: {
 			en: {
 				loginRequired: 'Please log in',
-				loggingIn: 'Please wait while loggin in...',
+				loggingIn: 'Please wait while logging in...',
 				loginFailed: 'Invalid  login or password',
 				loginRequestFailed: 'Failed to connect',
 				loggingOut: 'Please wait while loggin out...',

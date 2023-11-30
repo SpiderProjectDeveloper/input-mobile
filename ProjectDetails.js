@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
-import { View, ScrollView, Text, FlatList } from 'react-native';
+import { View, ScrollView, Text } from 'react-native';
 import { EditField } from './EditField.js';
 import { 
 	makeUrlHelper, isValidTimeInSecondsHelper, formatSpiderDateHelper, readDictValue 
 } from './helpers.js';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
+import { EditDateTime } from './EditDateTime.js';
 
 export class ProjectDetails extends Component 
 {
@@ -18,7 +19,7 @@ export class ProjectDetails extends Component
 			projectInfo: {
 				versionIndex: null, version:null, name: null, date: null, notes: null,
 				input: {from: null, to: null, showAssign: null }
-			}
+			},
 		}
 
 		this._lastProjectRendered = null;
@@ -224,13 +225,21 @@ export class ProjectDetails extends Component
 		let editFieldStyle = (!this.props.disabled) ? 
 			styles.performanceDateInput : [styles.performanceDateInput, {color:settings.dimColor}];
 
-		return(
-			<View style={styles.projectDetailsContainer}>
-				<View style={styles.performanceDatesContainer}>
+			/*
 					<EditField disabled={this.props.disabled} ref={this.perfStartRef}
 						style={editFieldStyle} viewStyle={styles.performanceDate} type={'datetime'}
 						value={this._perfStart} setter={this.perfStartSetter} placeholder={'Start Date'} />							
 					<EditField disabled={this.props.disabled} ref={this.perfEndRef}
+						style={editFieldStyle} viewStyle={styles.performanceDate} type={'datetime'}
+						value={this._perfEnd} setter={this.perfEndSetter} placeholder={'End Date'} />
+			*/
+		return(
+			<View style={styles.projectDetailsContainer}>
+				<View style={styles.performanceDatesContainer}>
+					<EditDateTime disabled={this.props.disabled} ref={this.perfStartRef}
+						style={editFieldStyle} viewStyle={styles.performanceDate} type={'datetime'}
+						value={this._perfStart} setter={this.perfStartSetter} placeholder={'Start Date'} />							
+					<EditDateTime disabled={this.props.disabled} ref={this.perfEndRef}
 						style={editFieldStyle} viewStyle={styles.performanceDate} type={'datetime'}
 						value={this._perfEnd} setter={this.perfEndSetter} placeholder={'End Date'} />
 				</View>
@@ -247,4 +256,6 @@ export class ProjectDetails extends Component
 			</View>
 		);
 	}
+
+	
 }

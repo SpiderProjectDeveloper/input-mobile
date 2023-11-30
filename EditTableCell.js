@@ -44,7 +44,7 @@ export class EditTableCell extends Component
 			if( type === 'number' ) {
 				value = value.toString();
 			} else if( type === 'datetime' ) {
-				value = formatSpiderDateHelper(value);
+				value = formatSpiderDateHelper(value, false);
 			} 
 			// else { value = value; }
 		} else { 

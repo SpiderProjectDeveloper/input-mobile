@@ -1,7 +1,4 @@
-﻿import React from 'react';
-import { View, Text } from 'react-native';
-import { settings } from './settings.js';
-import { styles } from './styles.js';
+﻿import { settings } from './settings.js';
 
 export function logHelper(...s) {
 	if( settings.log ) {
@@ -13,7 +10,8 @@ export function makeUrlHelper( cr ) {
   return 'http://' + cr.server + ':' + cr.port;
 }
 
-export function formatSpiderDateHelper( date, dateOnly=false, format={format:'DMY', dateDelim:'.', timeDelim:':'} ) 
+export function formatSpiderDateHelper( 
+	date, dateOnly = false, format = {format:'DMY', dateDelim:'.', timeDelim:':'} ) 
 {
   let spiderDateString = null;
   
@@ -56,7 +54,8 @@ export function formatSpiderDateHelper( date, dateOnly=false, format={format:'DM
 }
 
 
-export function isValidSpiderDateHelper(value) {
+export function isValidSpiderDateHelper(value) 
+{
 	let re =  new RegExp( /^ *([0-9]{2})[\.\-\:\\\/]{1}([0-9]{2})[\.\-\:\\\/]{1}([0-9]{2,4}) *$/);
 	let e = re.exec(value);
 	if( e === null ) {
@@ -96,7 +95,16 @@ export function isValidSpiderDateHelper(value) {
 	return true;
 }
 
-export function parseSpiderDateHelper( dateString, format={ format:'DMY' } ) {
+export function parseSpiderDateHelper( dateString, format={ format:'DMY' } ) 
+{
+	let date = parseSpiderDateToJSDateHelper( dateString, format );
+	if( date === null ) return null;
+
+	return date.getTime() / 1000;
+}
+
+export function parseSpiderDateToJSDateHelper( dateString, format={ format:'DMY' } ) 
+{
 	if( typeof(dateString) === 'undefined' ) {
 		return null;
 	}
@@ -149,7 +157,8 @@ export function parseSpiderDateHelper( dateString, format={ format:'DMY' } ) {
 	if( date === null ) {
 		return null;
 	}
-	return date.getTime() / 1000;
+	
+	return date;
 }
 
 
@@ -399,4 +408,17 @@ export function decodeSPColorToHtml( decColor, defaultColor=null )
 		}
 	}
 	return defaultColor;
+}
+
+export function getSpiderDate( datetime )
+{
+	let datetimepair = datetime.split(' ');
+	return datetimepair[0];
+}
+
+export function getSpiderTime( datetime )
+{
+	let datetimepair = datetime.split(' ');
+	if( datetimepair.length < 2 ) return null;
+	return datetimepair[1];
 }

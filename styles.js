@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
       flexDirection: 'row', padding: 0, backgroundColor: settings.screenBgColor2
     },
     performanceDate: {
-      flex: 5, paddingTop: 0, paddingBottom: 6, paddingLeft: 4, paddingRight: 4, 
+      flex: 5, margin:2, paddingTop: 0, paddingBottom: 6, paddingLeft: 4, paddingRight: 4, 
 			backgroundColor: settings.screenBgColor2			     
     },
     performanceDateInput: {
@@ -93,6 +93,13 @@ export const styles = StyleSheet.create({
 			borderWidth:1, borderColor:settings.dimColor, 
 			textAlign: 'left', fontSize:14 
 		},
+		editTableDatetimeCell: {
+			marginLeft:-1, marginTop: -1, padding:1, 
+			borderWidth:1, borderColor:settings.dimColor, 
+		},
+		editTableDatetimeText: {
+			padding:2, textAlign: 'left', fontSize:14 
+		},		
 		editTableHeadCellContainer: {
 			flexDirection:'column', 
 			marginLeft:-1, marginTop: -1, padding: 0,

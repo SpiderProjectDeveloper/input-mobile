@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Pressable, View, Text, TextInput, ScrollView, ColorPropType } from 'react-native';
 import { EditTableCell } from "./EditTableCell.js";
+import { DateTimeCell } from "./DateTimeCell.js";
 import { decodeSPColorToHtml } from './helpers.js';
 import { settings } from './settings.js';
 import { styles } from './styles.js';
@@ -163,7 +164,6 @@ export class EditTableBody extends Component
 				let f = this.props.data.fields[icol];
 				if( 'hidden' in f && f.hidden === 1 ) continue;
 
-				let toFixed = 2; // this.props.data.fields['toFixed']
 				let value;
 				if( f.Code === '__lineNumber__' ) {
 					value = irow;
@@ -181,18 +181,34 @@ export class EditTableBody extends Component
 					this._refs[ 'r'+irow+'c'+icol ] = ref;
 				}
 
-				rowCells.push( 
-					<EditTableCell 
-						key= { icol } { ...( (ref !== null) ? {ref:ref} : {} ) } 
-						editTableCellChange= { this.props.editTableCellChange }
-						row = { irow } col = { icol } value = { value } 
-						width = { this.props.widths[icol] } 
-						editable = { this.props.editables[icol] } 
-						type = { this.props.types[icol] }
-						bgColor = { bgColor }
-						toFixed= { toFixed }
-					/>
+				if( this.props.types[icol] === 'datetime' ) 
+				{
+					rowCells.push(
+						<DateTimeCell 
+							key= { icol } { ...( (ref !== null) ? {ref:ref} : {} ) } 
+							editTableCellChange = { this.props.editTableCellChange }
+							row = { irow } col = { icol } value = { value } 
+							width = { this.props.widths[icol] } 
+							editable = { this.props.editables[icol] } 
+							bgColor = { bgColor }
+						/>
+					);
+				} else 
+				{
+					let toFixed = 2; // this.props.data.fields['toFixed']
+					rowCells.push( 
+						<EditTableCell 
+							key= { icol } { ...( (ref !== null) ? {ref:ref} : {} ) } 
+							editTableCellChange = { this.props.editTableCellChange }
+							row = { irow } col = { icol } value = { value } 
+							width = { this.props.widths[icol] } 
+							editable = { this.props.editables[icol] } 
+							type = { this.props.types[icol] }
+							bgColor = { bgColor }
+							toFixed= { toFixed }
+						/>
 				);
+				}
 			}
 			rows.push(<View key={irow} style={{flexDirection:'row'}}>{rowCells}</View>);
 		}	

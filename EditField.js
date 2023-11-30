@@ -2,8 +2,10 @@ import React, { Component } from "react";
 import { Text, TextInput, View } from "react-native";
 import { isValidSpiderDateHelper } from './helpers.js';
 
-export class EditField extends Component {
-  constructor(props) {
+export class EditField extends Component 
+{
+  constructor(props) 
+	{
     super(props);
 
 		this._value = (typeof(this.props.value) !== 'undefined') ? this.props.value : '';
@@ -20,12 +22,14 @@ export class EditField extends Component {
 		this.setValue = this.setValue.bind(this);
   }
 
-	setValue( value ) {
+	setValue( value ) 
+	{
 		this._value = value;
 		this.setState( { value:value } );
 	}
 
-	onChange( value ) {
+	onChange( value ) 
+	{
 		if( this.props.type === 'number' ) {
 			if( value.length > 0 ) {
 				let re = new RegExp(/^ *[0-9]+(\.[0-9]*)? *$/,'i');
@@ -63,7 +67,8 @@ export class EditField extends Component {
 		this.setState({ value:this._value });
 	}
 
-	render() {
+	render() 
+	{
 		let value = this.state.value;
 		if( this.state.editable ) {
 			return(
@@ -75,13 +80,19 @@ export class EditField extends Component {
 							style={ ( typeof(this.props.style) !== 'undefined') ? this.props.style : { color:'darkgray', backgroundColor:'white'} } 
 							onChangeText={(value) => { this.onChange(value) }}
 							onBlur={(value) => { this.onBlur(value) }}
-							onFocus={() => { this.onFocus() }} />
+							onFocus={() => { this.onFocus() }} 
+						/>
 					</View>
 			)
 		} else {
 			return(
 					<View style={{ width: this.props.width, flexShrink:0 }}>
-						<Text style={{}}>{this.state.value}</Text>
+						<Text 
+							style={{}}
+							onPress={ (typeof(this.props.onPress) !== 'undefined') ? this.props.onPress : null } 
+						>
+							{this.state.value}							
+						</Text>
 					</View>
 			)
 		}
