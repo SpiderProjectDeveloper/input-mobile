@@ -13,7 +13,7 @@ const createExpoWebpackConfigAsync = require('@expo/webpack-config');
 module.exports = async function (env, argv) {
   env.pwa = false;
   //env.mode = "development";
-console.log(env);
+	//console.log(env);
   const config = await createExpoWebpackConfigAsync(env, argv);
   return config;
 };

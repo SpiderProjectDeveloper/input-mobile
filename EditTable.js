@@ -23,6 +23,7 @@ export class EditTable extends Component
 		let widths=[];
 		let types=[];
 		let editables=[];
+		let editablesA=[];
 		for( let i = 0 ; i < this.props.data.fields.length ; i++ ) 
 		{
 			let f = this.props.data.fields[i];
@@ -45,11 +46,15 @@ export class EditTable extends Component
 			let editable = (typeof(f.editable) === 'undefined') ? false : ((f.editable === 1 || f.editable === true) ? true : false);
 			editables.push(editable);
 
+			let editableA = (typeof(f.editableAssign) === 'undefined') ? false : ((f.editableAssign === 1 || f.editableAssign === true) ? true : false);
+			editablesA.push(editableA);
+
 			let type = (typeof(f.Type) === 'undefined') ? 'text' : f.Type;
 			types.push(type);			
 		}
 		this._widths = widths;
 		this._editables = editables;
+		this._editablesA = editablesA;
 		this._types = types;
 
 		this._tableBodyRef = React.createRef();
@@ -60,7 +65,7 @@ export class EditTable extends Component
 
 	updateShowAssignments( value ) 
 	{
-		console.log('updateShowAssignments' + value);
+		//console.log('updateShowAssignments' + value);
 		this.setState( { showAssignments: value } );
 	}
 
@@ -115,8 +120,11 @@ export class EditTable extends Component
 					<View style={{flexDirection:'column'}}>
 						<View style={{ flexDirection:'row' }}>{headCells}</View>
 						<EditTableBody ref={this._tableBodyRef}
-							data={this.props.data} types={this._types} 
-							widths={this._widths} editables={this._editables}
+							data={this.props.data} 
+							types={this._types} 
+							widths={this._widths} 
+							editables={this._editables}
+							editablesA={this._editablesA}
 							editTableCellChange={this.props.editTableCellChange}
 							showAssignments={this.state.showAssignments} />
 					</View>

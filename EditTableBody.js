@@ -174,12 +174,24 @@ export class EditTableBody extends Component
 						value = null;
 					}
 				}
-				
+
+				let editable = this.props.editables[icol];
+				if( 'Level' in rowData && rowData['Level'] === 'A' ) {
+					editable = editable && this.props.editablesA[icol];
+				} 
+
+				let ref=null;
+				if( editable ) {
+					ref = React.createRef();
+					this._refs[ 'r'+irow+'c'+icol ] = ref;
+				}
+				/*
 				let ref=null;
 				if( 'editable' in f && f.editable ) {
 					ref = React.createRef();
 					this._refs[ 'r'+irow+'c'+icol ] = ref;
 				}
+				*/
 
 				if( this.props.types[icol] === 'datetime' ) 
 				{
@@ -187,9 +199,10 @@ export class EditTableBody extends Component
 						<DateTimeCell 
 							key= { icol } { ...( (ref !== null) ? {ref:ref} : {} ) } 
 							editTableCellChange = { this.props.editTableCellChange }
-							row = { irow } col = { icol } value = { value } 
+							row = { irow } col = { icol } 
 							width = { this.props.widths[icol] } 
-							editable = { this.props.editables[icol] } 
+							value = { value } 
+							editable = { editable } 
 							bgColor = { bgColor }
 						/>
 					);
