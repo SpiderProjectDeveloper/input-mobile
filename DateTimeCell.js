@@ -107,13 +107,13 @@ export class DateTimeCell extends Component
 				<View style={ [ styles.editTableDatetimeCell, extraStyles ] }>
 					<Text 
 						style={ [ styles.editTableDatetimeText ] } 
-						onPress={ (e) => { console.log(e); this.openDateTimePicker( 'date' ); } }						
+						onPress={ (e) => { this.openDateTimePicker( 'date' ); } }						
 					>
 						{date}							
 					</Text>
 					<Text 
 						style={ [ styles.editTableDatetimeText ] } 
-						onPress={ (e) => { console.log(e); this.openDateTimePicker( 'time' ); } }						
+						onPress={ (e) => { this.openDateTimePicker( 'time' ); } }						
 					>
 						{time}							
 					</Text>					

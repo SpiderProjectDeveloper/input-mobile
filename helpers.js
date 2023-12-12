@@ -302,11 +302,11 @@ export function countDecimalDigits( value )
 		if( isNaN(value) ) return null;
 	} 	
 	value = Math.abs(value);
-	value = value - Math.round(value);
+	value = value - Math.floor(value);
 	let count = 0;
 	while( value > 0 ) {
 		value = value * 10;
-		value = value - Math.round(value);
+		value = value - Math.floor(value);
 		count++;
 	}
 

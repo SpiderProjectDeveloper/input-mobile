@@ -46,7 +46,7 @@ export class EditTable extends Component
 			let editable = (typeof(f.editable) === 'undefined') ? false : ((f.editable === 1 || f.editable === true) ? true : false);
 			editables.push(editable);
 
-			let editableA = (typeof(f.editableAssign) === 'undefined') ? false : ((f.editableAssign === 1 || f.editableAssign === true) ? true : false);
+			let editableA = (typeof(f.editableAssign) === 'undefined') ? editable : ((f.editableAssign === 1 || f.editableAssign === true) ? true : false);
 			editablesA.push(editableA);
 
 			let type = (typeof(f.Type) === 'undefined') ? 'text' : f.Type;

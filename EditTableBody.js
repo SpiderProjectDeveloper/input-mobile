@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Pressable, View, Text, TextInput, ScrollView, ColorPropType } from 'react-native';
+import { Pressable, View, Text, ScrollView } from 'react-native';
 import { EditTableCell } from "./EditTableCell.js";
 import { DateTimeCell } from "./DateTimeCell.js";
 import { decodeSPColorToHtml } from './helpers.js';
@@ -175,9 +175,11 @@ export class EditTableBody extends Component
 					}
 				}
 
-				let editable = this.props.editables[icol];
+				let editable = false;
 				if( 'Level' in rowData && rowData['Level'] === 'A' ) {
-					editable = editable && this.props.editablesA[icol];
+					editable =  this.props.editablesA[icol];
+				} else if( !('Level' in rowData) || rowData['Level'] === null || rowData['Level'] === '' ) {
+					editable = this.props.editables[icol];
 				} 
 
 				let ref=null;
@@ -215,18 +217,21 @@ export class EditTableBody extends Component
 							editTableCellChange = { this.props.editTableCellChange }
 							row = { irow } col = { icol } value = { value } 
 							width = { this.props.widths[icol] } 
-							editable = { this.props.editables[icol] } 
+							editable = { editable } 
 							type = { this.props.types[icol] }
 							bgColor = { bgColor }
-							toFixed= { toFixed }
+							toFixed = { toFixed }
+							title = { this.props.data.fields[icol].Name }
 						/>
 				);
 				}
 			}
-			rows.push(<View key={irow} style={{flexDirection:'row'}}>{rowCells}</View>);
+			rows.push(
+					<View key={irow} style={{flexDirection:'row'}}>{rowCells}</View>
+			);
 		}	
 
-		return(
+		return(						
 			<ScrollView style={{flexDirection:'column'}} 
 				onScroll={ ({nativeEvent}) => { this._onScroll(nativeEvent) } } scrollEventThrottle={16}>
 

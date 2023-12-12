@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { EditTableCellModal } from "./EditTableCellModal.js";
 import { 
 	isValidNumberHelper, isValidDateTimeSymbolsHelper, isValidSpiderDateHelper, 
 	formatSpiderDateHelper, formatDisplayNumberHelper, 
@@ -13,168 +14,105 @@ export class EditTableCell extends Component
   constructor(props) 
 	{
     super(props);
-		this.castValue = this.castValue.bind(this);
-		this.setValue = this.setValue.bind(this);
+		this.castValue = this.formatValue.bind(this);
 		this.onChange = this.onChange.bind(this);
-		this.onBlur = this.onBlur.bind(this);
-		this.onFocus = this.onFocus.bind(this);
+
+		this.openModal = this.openModal.bind(this);
+		this.closeModal = this.closeModal.bind(this);
+		this.renderModal = this.renderModal.bind(this);
 
 		this._ref = React.createRef();
 
 		let type = (typeof(this.props.type) !== 'undefined') ? this.props.type : 'text';
-		let value = this.castValue(this.props.value, type);
 
-		this._originalValue = value;
-		this._updatedValue = value;
+		this._originalValue = this.props.value;
 		this.state = {
 			row: this.props.row,
 			col: this.props.col,
-			value: value,
+			value: this.props.value,
 			type: type,
 			editable: (typeof(this.props.editable) !== 'undefined' && this.props.editable !== null) ? this.props.editable : false,
 			updated: false,
-			beingEdited: false,
 			displayRounded: true,
+			renderModal: false,
 		};
   }
 
-	castValue( value, type ) 
+	formatValue( value, type ) 
 	{
-		if( typeof(value) !== 'undefined' && value !== null) {
+		if( typeof(value) !== 'undefined' && value !== null ) {
 			if( type === 'number' ) {
-				value = value.toString();
+				if( !this.state.updated && this.state.displayRounded ) {
+					let count = null;
+					[value, count] = formatDisplayNumberHelper( value, this.props.toFixed );
+					if( count !== null && count > this.props.toFixed ) value += String.fromCharCode(0x2026);
+				} else {
+					value = value.toString();
+				}
 			} else if( type === 'datetime' ) {
 				value = formatSpiderDateHelper(value, false);
 			} 
-			// else { value = value; }
 		} else { 
 			value = '';
 		}
 		return value;
 	}
 
-	setValue( v ) 
+	onChange(v) 
 	{
-		let value = this.castValue(v, this.state.type);
-		this._updatedValue = value;
-		this.setState({ value:value, updated:true });
-	}
-
-	onChange( value ) 
-	{
-		if( this.props.type === 'number' ) {
-			if( !isEmptyStringHelper(value) > 0 ) {
-				if( !isValidNumberHelper(value) ) {					
-					value = this._updatedValue;
-				} else {
-					this._updatedValue = value; 
-				}
-			}
-		} else if( this.props.type === 'datetime') {
-			if( !isEmptyStringHelper(value) && !isValidDateTimeSymbolsHelper(value) ) {
-				value = this._updatedValue;
-			} else {
-				this._updatedValue = value; 
-			}
-		} else {
-			this._updatedValue = value; 
-		}
-		this.setState({ value: value });
-	}
-
-	onBlur() 
-	{
-		let newState = { value: this.state.value, updated: false, beingEdited: false };
+		let newState = { value: v, updated: false };
 		let updated = false;
 		let newSpiderValue;
 		if( this.state.type === 'number' ) 
 		{
-			newSpiderValue = parseFloat(this.state.value);
+			newSpiderValue = parseFloat(v);
 			if( isNaN(newSpiderValue) ) newSpiderValue = null; 
 			updated = isDifferentNumbersHelper( newSpiderValue, this.props.value );
-			/*
-			if( (this.props.value === null && newSpiderValue !== null) || (newSpiderValue === null && this.props.value !== null) ) {
-				updated = true;
-			} else if( this.props.value !== null && newSpiderValue !== null ) {
-				if( Math.abs(newSpiderValue - this.props.value) > 1e-10 ) {
-					updated = true;
-				}
-			} 
-			*/
-		} else if( this.state.type === 'datetime' ) 
-		{
-			let newValue = this.state.value;
-			if( !isEmptyStringHelper(this.state.value) && !isValidSpiderDateHelper(this.state.value) ) {
-				newValue = this._originalValue;
-				newState.value = this._originalValue;
-			}
-			newSpiderValue = (!isEmptyStringHelper(newValue)) ? parseSpiderDateHelper(newValue) : null;
-			if( (this.props.value === null && newSpiderValue !== null) || (newSpiderValue === null && this.props.value !== null) ) {
-				updated = true;
-			} else if( this.props.value !== null && newSpiderValue !== null ) {
-				if( Math.abs(newSpiderValue - this.props.value) > 59 ) {
-					updated = true;
-				}
-			}
 		} else {
-			newSpiderValue = this.state.value;
+			newSpiderValue = v;
 			if( newSpiderValue !== this.props.value ) {
 				updated = true;
 			}
 		}
 		
 		if( updated ) {
-			//if( 'editTableCellChange' in props)
+			if( 'editTableCellChange' in this.props ) {
 				this.props.editTableCellChange( newSpiderValue, this.state.row, this.state.col );
+			}
 			newState.updated = true;
 		} 
 		this.setState( newState );
 	}
 
-	onFocus() {
-	}
-
 	render() 
 	{		
+		let value = this.formatValue( this.state.value, this.props.type );
+
 		if( this.state.editable ) 
 		{
-			let value, count=null; 
-			if( this.props.type === 'number' && !this.state.beingEdited && !this.state.updated ) {
-				[value, count] = formatDisplayNumberHelper( this.state.value, this.props.toFixed );
-				if( count !== null && count > this.props.toFixed ) value += String.fromCharCode(0x2026);
-			} else {
-				value = this.state.value;
+			let color = (this.state.updated) ? settings.updatedColor : settings.editableTextColor;
+			let extraStyles = { 
+				width: this.props.width, color:color, backgroundColor: this.props.bgColor, 
+			};
+			if( this.state.renderModal ) {
+				extraStyles.borderColor = '#7f7f7f';
+				extraStyles.backgroundColor = '#efefef';
 			}
 
-			let color = (this.state.updated) ? settings.updatedColor : settings.editableTextColor;
-			let extraStyles = { width: this.props.width, color:color, backgroundColor: this.props.bgColor };
-
 			return(
-				<TextInput 
-					ref = {this._ref}
-					value={ value } 
-					style={ [ styles.editTableCell, extraStyles ] } 
-					onFocus = { () => { 
-						this._ref.current.value = this.state.value; 
-						this.setState( { beingEdited: true } ); 
-					} }
-					onChangeText={(value) => { this.onChange(value); }}
-					onBlur={(value) => { this.onBlur(value) }}
-					selectTextOnFocus = {true}
-				/>
+				<>
+					<Text
+						ref = {this._ref}
+						style = { [ styles.editTableCell, extraStyles ] } 
+						onPress = { () => { this.openModal(); } }
+					>
+						{value}
+					</Text>
+					{ this.renderModal() }
+				</>
 			);
 		} else 
 		{
-			let value, count=null; 
-			if( this.props.type === 'number' && this.state.displayRounded ) {
-				[value, count] = formatDisplayNumberHelper( this.state.value, this.props.toFixed );
-				if( count !== null && count > this.props.toFixed ) value += String.fromCharCode(0x2026);
-			} else if( this.props.type === 'lineNumber' ) {
-				value = this.state.value;
-			} else {
-				value = this.state.value;
-			}
-
 			let style = (typeof(this.props.row) === 'undefined' || this.props.type === 'lineNumber') ? 
 				styles.editTableHeadCell : styles.editTableReadOnlyCell;			
 
@@ -187,5 +125,27 @@ export class EditTableCell extends Component
 						</Text>
 			)
 		}
+	}
+
+	closeModal() {
+		this.setState( { renderModal: false } );
+	}
+
+	openModal() {
+		this.setState( { renderModal: true } );
+	}
+
+	renderModal()
+	{
+		if( !this.state.renderModal ) return;
+		return(
+			<EditTableCellModal 
+				value = { this.state.value }
+				type = { this.props.type } 
+				onConfirm = { (v) => { this.closeModal(); this.onChange(v); } }
+				onCancel = { () => { this.closeModal(); } }
+				title = { this.props.title }
+			/>
+		);
 	}
 }

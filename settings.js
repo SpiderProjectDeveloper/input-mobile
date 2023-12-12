@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { Dimensions } from 'react-native';
 
 export const settings = {
-		log: true,
+		log: false,
 		window: Dimensions.get('window'),
 		lang: 'en',
 
@@ -35,6 +35,8 @@ export const settings = {
     noButton: <AntDesign name="close" size={20} color="white"/>,
     backToProjectsButton: <AntDesign name="back" size={20} color="white"/>,	// an alternative icon: "back" / "left"
     saveButton: <AntDesign name="upload" size={20} color="white"/>,	// an alternativr icon: "hdd"
+    confirmButton: <Feather name="check" size={20} color="green"/>,		// "user" / "log-in"
+    cancelButton: <Feather name="x" size={20} color="gray"/>,		// "user" / "log-in"
 
 		loadingIcon: <AntDesign name="loading1" size={28} color="black" />,
 		fileIcon: <AntDesign name="file1" size={18} color="#004444" />,
