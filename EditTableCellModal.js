@@ -90,23 +90,31 @@ export class EditTableCellModal extends Component
 								onChangeText={(value) => { this.onChange(value); }}
 								selectTextOnFocus = {true}
 							/>
-							<View style= {{ flexDirection: 'row'} }>
-							<Pressable
-								style = { {} }
-								onPress={ () => { 
-									this.onConfirm();									 
-								} }>
-								<Text style={ { paddingRight:40, paddingTop:20, paddingBottom: 12, fontSize: 32, color:'#7fef7f' } }>
-									{settings.confirmButton}</Text>
-							</Pressable>	
-							<Pressable
-								style = { {} }
-								onPress={ () => { 
-									this.onCancel(); 
-								} }>
-								<Text style = { { paddingLeft:40, paddingTop:20, paddingBottom: 12, fontSize: 32, color:'#ef7f7f' } }>
-									{settings.cancelButton}</Text>
-							</Pressable>	
+							<View style= { { flexDirection: 'row', marginTop: 20 } }>
+								<Pressable
+									style = { {} }
+									onPress={ () => { 
+										this.onCancel(); 
+									} }>
+									<Text style = { 
+										{ marginRight: 4, paddingHorizontal:30, paddingBottom:12, textAlign: 'center', 
+											fontSize: 32, color:'#ffffff', backgroundColor: settings.activeButtonBgColor } 
+									}>
+										{settings.cancelButton}
+									</Text>
+								</Pressable>	
+								<Pressable
+									style = { {} }
+									onPress={ () => { 
+										this.onConfirm();									 
+									} }>
+									<Text style = { 
+										{ marginLeft: 4, paddingHorizontal:30, paddingBottom:12, textAlign: 'center', 
+											fontSize: 32, color:'#ffffff', backgroundColor: settings.activeButtonBgColor } 
+									}>
+										{settings.confirmButton}
+									</Text>
+								</Pressable>	
 							</View>
 						</View>
 					</View>				
